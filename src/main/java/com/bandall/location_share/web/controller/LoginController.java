@@ -7,6 +7,7 @@ import com.bandall.location_share.domain.dto.TokenInfoDto;
 import com.bandall.location_share.domain.login.LoginService;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import com.bandall.location_share.domain.member.Member;
+import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

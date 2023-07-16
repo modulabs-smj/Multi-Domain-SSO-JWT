@@ -16,7 +16,6 @@ public class MemberDetails implements UserDetails {
     private String username;
     private String password;
     private Role role;
-//    private String refreshToken;
 
     private boolean isEnabled;
     private boolean isAccountNonExpired;

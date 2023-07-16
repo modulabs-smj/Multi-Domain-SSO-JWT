@@ -8,6 +8,7 @@ import lombok.Data;
 public class TokenValidationResult {
     private Boolean result;
     private TokenType tokenType;
+    private String tokenId;
     private TokenStatus tokenStatus;
     private Exception exception;
 }

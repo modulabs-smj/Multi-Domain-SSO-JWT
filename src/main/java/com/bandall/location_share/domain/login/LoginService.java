@@ -1,5 +1,6 @@
 package com.bandall.location_share.domain.login;
 
+import com.bandall.location_share.aop.LoggerAOP;
 import com.bandall.location_share.domain.dto.MemberCreateDto;
 import com.bandall.location_share.domain.dto.TokenInfoDto;
 import com.bandall.location_share.domain.login.jwt.token.*;
@@ -7,6 +8,7 @@ import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.MemberJpaRepository;
+import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.domain.member.enums.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +36,6 @@ public class LoginService {
     private final RedisAccessTokenBlackListRepository blackListRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    @Value("${jwt.access-token-validity-in-seconds}")
-    private Long accessTokenTime;
     private static final String PASSWORD_REGEX_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$";
 
     public Member createMember(MemberCreateDto memberCreateDto) {
@@ -50,16 +50,16 @@ public class LoginService {
         }
 
         Member member = Member.builder()
-                .loginType(memberCreateDto.getLoginType())
+                .loginType(LoginType.NONE)
                 .email(memberCreateDto.getEmail())
-                .password(memberCreateDto.getPassword() == null ? "" : passwordEncoder.encode(memberCreateDto.getPassword()))
+                .password(passwordEncoder.encode(memberCreateDto.getPassword()))
                 .username(memberCreateDto.getUsername())
                 .role(Role.ROLE_USER).build();
 
         return memberRepository.save(member);
     }
 
-    // OAuth 적용 시 NONE 타입만 사용 가능하도록 수정
+    // OAuth 적용 시 NONE 타입만 사용 가능하도록 수정 + Email 인증 확인 로직 추가
     public TokenInfoDto loginMember(String email, String password) {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email, password);
 
@@ -70,11 +70,16 @@ public class LoginService {
             // 생성된 authentication 정보를 토대로 access, refresh 토큰 생성
             TokenInfoDto tokenInfoDto = tokenProvider.createTokenWithAuthentication(authentication);
 
-            RefreshToken refreshToken = tokenProvider.getRefreshTokenData(tokenInfoDto.getRefreshToken());
+            RefreshToken refreshToken = RefreshToken.builder()
+                    .ownerEmail(tokenInfoDto.getOwnerEmail())
+                    .value(tokenInfoDto.getRefreshToken())
+                    .expireTime(tokenInfoDto.getRefreshTokenExpireTime())
+                    .build();
+
             refreshTokenRepository.save(refreshToken);
             return tokenInfoDto;
         } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("계정이 존재하지 않거나 비밀번호가 잘못되었습니다.");
+            throw new BadCredentialsException("계정이 존재하지 않거나 비밀번호가 잘못되었습니다. 소셜 로그인의 경우 소셜 로그인을 이용해주세요.");
         }
     }
 
@@ -87,6 +92,7 @@ public class LoginService {
             case TOKEN_EXPIRED -> throw new IllegalArgumentException("만료된 Refresh 토큰입니다.");
             case TOKEN_WRONG_SIGNATURE -> throw new IllegalArgumentException("잘못된 토큰입니다.");
             case TOKEN_IS_BLACKLIST -> throw new IllegalArgumentException("폐기된 Access 토큰입니다.");
+            case TOKEN_ID_NOT_MATCH -> throw new IllegalArgumentException("잘못된 토큰 쌍입니다.");
         }
 
         RefreshToken refreshTokenDb = refreshTokenRepository.findRefreshTokenByValue(refreshToken).orElseThrow(() ->
@@ -100,10 +106,15 @@ public class LoginService {
 
         // 정책에 따라서 이전 리프레시 토큰의 만료 시간을 추가 tokenId 사용
         TokenInfoDto tokenInfoDto = tokenProvider.createTokenWithMember(member);
-        RefreshToken refreshTokenData = tokenProvider.getRefreshTokenData(tokenInfoDto.getRefreshToken());
-        refreshTokenRepository.save(refreshTokenData);
+        RefreshToken newRefreshToken = RefreshToken.builder()
+                .ownerEmail(tokenInfoDto.getOwnerEmail())
+                .value(tokenInfoDto.getRefreshToken())
+                .expireTime(tokenInfoDto.getRefreshTokenExpireTime())
+                .build();
+
+        refreshTokenRepository.save(newRefreshToken);
         refreshTokenRepository.delete(refreshTokenDb);
-        blackListRepository.setBlackList(accessToken, email, accessTokenTime * 1000);
+        blackListRepository.setBlackList(accessToken, email);
         return tokenInfoDto;
     }
 
@@ -112,7 +123,7 @@ public class LoginService {
                 .orElseThrow(() -> new IllegalArgumentException("잘못된 Refresh 토큰입니다."));
 
         refreshTokenRepository.deleteRefreshTokenByValue(refreshToken);
-        blackListRepository.setBlackList(accessToken, email, accessTokenTime * 1000);
+        blackListRepository.setBlackList(accessToken, email);
     }
 
     public Member updateUsername(String email, String username) {
@@ -136,6 +147,11 @@ public class LoginService {
             return new IllegalArgumentException("계정이 존재하지 않습니다.");
         });
 
+        if(member.getLoginType() != LoginType.NONE) {
+            log.info("소셜 로그인 유저의 잘못된 비밀번호 변경 요청");
+            throw new BadCredentialsException("소셜 로그인 서비스를 사용 중인 계정으로 비밀번호가 존재하지 않습니다.");
+        }
+
         if(!passwordEncoder.matches(oldPassword, member.getPassword())) {
             log.info("일치하지 않는 비밀번호");
             throw new BadCredentialsException("기존 비밀번호 확인에 실패했습니다.");
@@ -158,7 +174,8 @@ public class LoginService {
 
         refreshTokenRepository.deleteAllRefreshTokenByEmail(email);
         memberRepository.deleteById(foundMember.getId());
-        blackListRepository.setBlackList(accessToken, email, accessTokenTime * 1000);
+        memberRepository.flush();
+        blackListRepository.setBlackList(accessToken, email);
     }
 
     //패스워드 설정 정책

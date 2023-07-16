@@ -21,11 +21,15 @@ public class Member {
     @Column(unique = true, length = 50)
     private String email;
 
+    private boolean isEmailVerified;
+
     @Column(length = 100)
     private String password;
 
     @Column(length = 50)
     private String username;
+
+    private String profileImageUri;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -40,10 +44,20 @@ public class Member {
         return this;
     }
 
+    public Member updateProfileImageUri(String profileImageUri) {
+        this.profileImageUri = profileImageUri;
+        return this;
+    }
+
+    public void updateEmailVerified(boolean EmailVerified) {
+        this.isEmailVerified = EmailVerified;
+    }
+
     @Builder
     public Member(LoginType loginType, String email, String password, String username, Role role) {
         this.loginType = loginType;
         this.email = email;
+        this.isEmailVerified = false;
         this.password = password;
         this.username = username;
         this.role = role;

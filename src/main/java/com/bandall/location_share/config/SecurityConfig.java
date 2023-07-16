@@ -26,11 +26,11 @@ public class SecurityConfig {
 
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-    private final JwtFilter customJwtFilter;
+    private final JwtFilter jwtFilter;
 
     private final String[] adminUrl = {"/admin/**"};
     private final String[] permitAllUrl = {"/error", "/api/account/auth", "/api/account/refresh", "/oauth/login/**"};
-    private final String[] anonymousUrl = {"/api/account/create"};
+    private final String[] anonymousUrl = {"/api/account/create", "/oauth/login/kakao"};
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(anonymousUrl).anonymous()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(customJwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

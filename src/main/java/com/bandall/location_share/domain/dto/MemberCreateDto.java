@@ -9,8 +9,8 @@ import lombok.Data;
 
 @Data
 public class MemberCreateDto {
-    @EnumValidation(enumClass = LoginType.class)
-    private LoginType loginType;
+//    @EnumValidation(enumClass = LoginType.class)
+//    private LoginType loginType;
 
     @Email
     private String email;

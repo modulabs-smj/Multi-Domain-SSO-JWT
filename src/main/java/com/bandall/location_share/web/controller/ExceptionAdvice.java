@@ -1,5 +1,6 @@
 package com.bandall.location_share.web.controller;
 
+import com.bandall.location_share.domain.exceptions.BadResponseException;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -56,4 +57,12 @@ public class ExceptionAdvice {
         String message = e.getMessage();
         return new ApiResponseJson(HttpStatus.UNAUTHORIZED, Map.of("errMsg", message));
     }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(BadResponseException.class)
+    public ApiResponseJson badServerResponse(Exception e) {
+        String message = e.getMessage();
+        return new ApiResponseJson(HttpStatus.UNAUTHORIZED, Map.of("errMsg", message));
+    }
+
 }

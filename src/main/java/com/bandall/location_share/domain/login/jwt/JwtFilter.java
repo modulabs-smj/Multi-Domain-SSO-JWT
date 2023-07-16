@@ -44,20 +44,20 @@ public class JwtFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 log.info("AUTH SUCCESS : {},", authentication.getName());
             } else {
-                // 2. 잘못된 토큰일 경우
+                // 2. 잘못된 토큰일 경우 (Refresh token을 넣은 경우)
                 // jwt 토큰 예외 구분 처리를 위해 request에 tokenValidationResult를 담아 EntryPoint에 전달
                 if(isBlackList) {
                     tokenValidationResult.setResult(false);
                     tokenValidationResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
-                    tokenValidationResult.setException(new DiscardedJwtException());
+                    tokenValidationResult.setException(new DiscardedJwtException("Toekn discarded"));
                 }
                 request.setAttribute("result", tokenValidationResult);
             }
         } else {
-            // 3. Authorization 헤더에 refresh 토큰을 담은 경우
-            log.info("Refresh Token in Authorization Header");
+            // 3. Authorization 헤더가 없는 경우
+            log.info("No Authorization Header");
             request.setAttribute("result",
-                    new TokenValidationResult(false, null, TokenStatus.NO_AUTH_HEADER, null)
+                    new TokenValidationResult(false, null, null, TokenStatus.NO_AUTH_HEADER, null)
             );
         }
 

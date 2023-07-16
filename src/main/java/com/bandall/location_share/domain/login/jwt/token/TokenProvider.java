@@ -1,5 +1,6 @@
 package com.bandall.location_share.domain.login.jwt.token;
 
+import com.bandall.location_share.aop.LoggerAOP;
 import com.bandall.location_share.domain.dto.TokenInfoDto;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 //토큰 생성 및 검증 클래스 수동 빈 등록 사용
 @Slf4j
+@LoggerAOP
 public class TokenProvider {
 
     protected static final String KEY_AUTHORITIES = "auth";
@@ -78,8 +80,12 @@ public class TokenProvider {
                 .compact();
 
         return TokenInfoDto.builder()
+                .ownerEmail(email)
+                .tokenId(tokenId)
                 .accessToken(accessToken)
+                .accessTokenExpireTime(accessTokenExpireTime)
                 .refreshToken(refreshToken)
+                .refreshTokenExpireTime(refreshTokenExpireTime)
                 .build();
     }
 
@@ -109,8 +115,12 @@ public class TokenProvider {
                 .compact();
 
         return TokenInfoDto.builder()
+                .ownerEmail(member.getEmail())
+                .tokenId(tokenId)
                 .accessToken(accessToken)
+                .accessTokenExpireTime(accessTokenExpireTime)
                 .refreshToken(refreshToken)
+                .refreshTokenExpireTime(refreshTokenExpireTime)
                 .build();
     }
 
@@ -133,26 +143,27 @@ public class TokenProvider {
         return new UsernamePasswordAuthenticationToken(principle, token, authorities);
     }
 
-    // 이후에는 claim을 두 번 하지 않도록 새로운 dto를 만들어서 전달할 수 있게 수정
-    // 최종적으로 이 함수 삭제
-    public RefreshToken getRefreshTokenData(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(hashKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
-        return new RefreshToken(claims.getSubject(), token, claims.getExpiration());
-    }
+//    // 이후에는 claim을 두 번 하지 않도록 새로운 dto를 만들어서 전달할 수 있게 수정
+//    // 최종적으로 이 함수 삭제
+//    public RefreshToken getRefreshTokenData(String token) {
+//        Claims claims = Jwts.parserBuilder()
+//                .setSigningKey(hashKey)
+//                .build()
+//                .parseClaimsJws(token)
+//                .getBody();
+//
+//        return new RefreshToken(claims.getSubject(), token, claims.getExpiration());
+//    }
 
     // 토큰 유효성 검사 -> access, refresh 토큰 둘 다 검증하는 함수이므로 access 토큰 블랙리스트는 체크하지 않는다.
     public TokenValidationResult validateToken(String token) {
-        TokenValidationResult validResult = new TokenValidationResult(false, TokenType.ACCESS, null, null);
+        TokenValidationResult validResult = new TokenValidationResult(false, TokenType.ACCESS, null,null, null);
         try {
             Claims claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
             if(claims.get(KEY_AUTHORITIES) == null) validResult.setTokenType(TokenType.REFRESH);
 
             validResult.setResult(true);
+            validResult.setTokenId(claims.get(KEY_TOKEN_ID, String.class));
             validResult.setTokenStatus(TokenStatus.TOKEN_VALID);
             return validResult;
         } catch (ExpiredJwtException e) {
@@ -179,7 +190,7 @@ public class TokenProvider {
     public TokenValidationResult isAccessTokenAndRefreshTokenValid(String accessToken, String refreshToken) {
         TokenValidationResult refTokenRes = validateToken(refreshToken);
         TokenValidationResult aTokenRes = validateToken(accessToken);
-        TokenValidationResult totalResult = new TokenValidationResult(true, null, TokenStatus.TOKEN_VALID, null);
+        TokenValidationResult totalResult = new TokenValidationResult(true, null, null, TokenStatus.TOKEN_VALID, null);
 
         if(refTokenRes.getTokenStatus() == TokenStatus.TOKEN_EXPIRED) {
             log.info("Expired Refresh Token");
@@ -200,14 +211,21 @@ public class TokenProvider {
             return totalResult;
         }
 
-        // claim으로 tokenID를 비교하는 로직으로 대체하려 했으나 redis가 속도가 더 빨라서 취소
-        // 많은 양의 트래픽이 있는 환경에서는 테스트 해볼만 한듯
-        if(isAccessTokenBlackList(accessToken)) {
-            log.info("Discarded Token");
-            totalResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
+//        // claim으로 tokenID를 비교하는 로직으로 대체하려 했으나 redis가 속도가 더 빨라서 취소
+//        // => claim을 추가적으로 안할 수 있게 코드 개선
+//        if(isAccessTokenBlackList(accessToken)) {
+//            log.info("Discarded Token");
+//            totalResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
+//            return totalResult;
+//        }
+
+        if(!refTokenRes.getTokenId().equals(aTokenRes.getTokenId())) {
+            log.info("Wrong refresh & access token pair");
+            totalResult.setTokenStatus(TokenStatus.TOKEN_ID_NOT_MATCH);
             return totalResult;
         }
 
+        totalResult.setTokenId(aTokenRes.getTokenId());
         return totalResult;
     }
 

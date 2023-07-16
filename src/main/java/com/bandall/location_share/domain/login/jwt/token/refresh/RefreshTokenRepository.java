@@ -1,5 +1,6 @@
 package com.bandall.location_share.domain.login.jwt.token.refresh;
 
+import com.bandall.location_share.aop.LoggerAOP;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+@LoggerAOP
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findRefreshTokenByValue(String value);
 
