@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
     private final String[] adminUrl = {"/admin/**"};
-    private final String[] permitAllUrl = {"/error", "/api/account/auth", "/api/account/refresh", "/oauth/login/**"};
+    private final String[] permitAllUrl = {"/error", "/api/account/auth", "/api/account/refresh", "/oauth/login/**", "/api/email-verification"};
     private final String[] anonymousUrl = {"/api/account/create", "/oauth/login/kakao"};
 
     @Bean

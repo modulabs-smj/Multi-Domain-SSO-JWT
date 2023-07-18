@@ -1,5 +1,6 @@
 package com.bandall.location_share.domain.member;
 
+import com.bandall.location_share.domain.exceptions.SocialLoginOnlyException;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
-import java.util.Optional;
 
 @Slf4j
 @Component
@@ -20,6 +20,10 @@ public class MemberDetailService implements UserDetailsService {
 
     private final MemberJpaRepository memberRepository;
 
+    /**
+     * 로그인 시 jwt 발급에만 사용하는 함수.
+     * MemberDetails에 member 객체의 데이터를 모두 넘기지 않아도 된다.
+     */
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -37,13 +41,13 @@ public class MemberDetailService implements UserDetailsService {
                 .username(member.getUsername())
                 .password(member.getPassword())
                 .role(member.getRole())
+                .isEmailVerified(member.isEmailVerified())
                 .isEnabled(true)
                 .isAccountNonExpired(true)
                 .isCredentialsNonExpired(true)
                 .isAccountNonLocked(true)
                 .authorities(Collections.singleton(new SimpleGrantedAuthority(member.getRole().toString())))
                 .build();
-//        log.info("memberDetails={}", memberDetails);
         return memberDetails;
     }
 }

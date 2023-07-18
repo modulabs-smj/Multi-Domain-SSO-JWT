@@ -45,20 +45,20 @@ public class OAuth2UserInfoProvider {
             HttpStatusCode statusCode = e.getStatusCode();
             if(statusCode.is4xxClientError()) {
                 log.info("잘못된 OAuth2 Access 토큰");
-                throw new BadResponseException("잘못된 OAuth2 Access 토큰입니다.");
+                throw new BadResponseException("잘못된 소셜 로그인 Access 토큰입니다.");
             }
             if(statusCode.is5xxServerError()) {
                 log.error("OAuth 서버에 오류 발생 => {}", e.getMessage());
                 throw new BadResponseException("OAuth2 서버에 오류가 발생했습니다.", e);
             }
-            throw new RuntimeException("OAuth2 정보 조회 중 오류 발생", e);
+            throw new RuntimeException("소셜 로그인 정보 조회 중 오류 발생", e);
         }
 
         try {
             Map<String, Object> attributes = mapper.readValue(response.getBody(), Map.class);
             return oAuth2UserInfoFactory.getOAuth2UserInfo(loginType, attributes);
         } catch (JsonProcessingException | NullPointerException e) {
-            throw new RuntimeException("OAuth2 사용자 정보 JSON 파싱 중 오류 발생", e);
+            throw new RuntimeException("소셜 로그인 사용자 정보 JSON 파싱 중 오류 발생", e);
         }
     }
 

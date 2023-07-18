@@ -1,18 +1,19 @@
 package com.bandall.location_share.domain.login;
 
-import com.bandall.location_share.aop.LoggerAOP;
 import com.bandall.location_share.domain.dto.MemberCreateDto;
 import com.bandall.location_share.domain.dto.TokenInfoDto;
+import com.bandall.location_share.domain.exceptions.EmailNotVerified;
 import com.bandall.location_share.domain.login.jwt.token.*;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
+import com.bandall.location_share.domain.login.verification_code.EmailVerificationService;
 import com.bandall.location_share.domain.member.Member;
+import com.bandall.location_share.domain.member.MemberDetails;
 import com.bandall.location_share.domain.member.MemberJpaRepository;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.domain.member.enums.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -20,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -32,9 +34,9 @@ public class LoginService {
     private final TokenProvider tokenProvider;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final PasswordEncoder passwordEncoder;
-
     private final RedisAccessTokenBlackListRepository blackListRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final EmailVerificationService verificationService;
 
     private static final String PASSWORD_REGEX_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$";
 
@@ -46,7 +48,7 @@ public class LoginService {
 
         if(memberRepository.existsByEmail(memberCreateDto.getEmail())) {
             log.info("이미 등록된 이메일={}", memberCreateDto.getEmail());
-            throw new BadCredentialsException("이미 등록된 이메일입니다.");
+            throw new IllegalArgumentException("이미 등록된 이메일입니다.");
         }
 
         Member member = Member.builder()
@@ -56,6 +58,7 @@ public class LoginService {
                 .username(memberCreateDto.getUsername())
                 .role(Role.ROLE_USER).build();
 
+        verificationService.sendVerificationEmail(member.getEmail());
         return memberRepository.save(member);
     }
 
@@ -66,6 +69,12 @@ public class LoginService {
         try {
              // 이메일 비밀번호 확인 후 authentication 생성
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+
+            // 이메일 인증이 안되어 있을 경우 (트랜잭션 전파로 인해 다른 클래스에 역할 위임)
+            if(!((MemberDetails) authentication.getPrincipal()).isEmailVerified()) {
+                verificationService.sendVerificationEmail(email);
+                throw new EmailNotVerified("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.");
+            }
 
             // 생성된 authentication 정보를 토대로 access, refresh 토큰 생성
             TokenInfoDto tokenInfoDto = tokenProvider.createTokenWithAuthentication(authentication);
@@ -176,6 +185,10 @@ public class LoginService {
         memberRepository.deleteById(foundMember.getId());
         memberRepository.flush();
         blackListRepository.setBlackList(accessToken, email);
+    }
+
+    public void verifyEmail(String code) {
+        verificationService.verifyEmail(code);
     }
 
     //패스워드 설정 정책

@@ -2,12 +2,14 @@ package com.bandall.location_share.domain.login;
 
 import com.bandall.location_share.domain.dto.TokenInfoDto;
 import com.bandall.location_share.domain.exceptions.DbException;
+import com.bandall.location_share.domain.exceptions.EmailNotVerified;
 import com.bandall.location_share.domain.login.jwt.token.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.login.oauth2.OAuth2UserInfoProvider;
 import com.bandall.location_share.domain.login.oauth2.userinfo.OAuth2UserInfo;
+import com.bandall.location_share.domain.login.verification_code.EmailVerificationService;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.MemberJpaRepository;
 import com.bandall.location_share.domain.member.enums.LoginType;
@@ -30,12 +32,12 @@ public class OAuth2LoginService {
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RedisAccessTokenBlackListRepository blackListRepository;
+    private final EmailVerificationService verificationService;
 
     private static final String EMAIL_REGEX_PATTERN = "^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$";
 
     public TokenInfoDto socialLogin(String accessToken, LoginType loginType) {
         OAuth2UserInfo profile = oAuth2UserInfoProvider.getProfile(accessToken, loginType);
-//        log.info("userProfileInfo={}", profile);
 
         String email = profile.getEmail();
         if(!StringUtils.hasText(email)) {
@@ -60,13 +62,17 @@ public class OAuth2LoginService {
             memberRepository.save(newMember);
         }
 
-        // 이후에 이메일 인증 로직 추가
 
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new DbException("db에 오류 발생"));
 
         if(member.getLoginType() == LoginType.NONE) {
             log.info("잘못된 로그인 타입");
             throw new IllegalArgumentException("이 계정은 소셜 로그인을 사용하지 않습니다.");
+        }
+
+        if (!member.isEmailVerified()) {
+            verificationService.sendVerificationEmail(member.getEmail());
+            throw new EmailNotVerified("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.");
         }
 
         TokenInfoDto tokenInfoDto = tokenProvider.createTokenWithMember(member);

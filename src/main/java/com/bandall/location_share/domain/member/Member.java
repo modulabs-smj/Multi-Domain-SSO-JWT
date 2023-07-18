@@ -29,6 +29,7 @@ public class Member {
     @Column(length = 50)
     private String username;
 
+    @Column(length = 255)
     private String profileImageUri;
 
     @Enumerated(EnumType.STRING)

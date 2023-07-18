@@ -16,6 +16,15 @@ public class MemberDetails implements UserDetails {
     private String username;
     private String password;
     private Role role;
+    private boolean isEmailVerified;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public boolean isEmailVerified() {
+        return isEmailVerified;
+    }
 
     private boolean isEnabled;
     private boolean isAccountNonExpired;

@@ -11,15 +11,13 @@ import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -131,4 +129,13 @@ public class LoginController {
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
 
+    @PostMapping("/api/email-verification")
+    public ApiResponseJson verifyEmail(String code) {
+        if(!StringUtils.hasText(code)) {
+            throw new IllegalArgumentException("잘못된 요청입니다.");
+        }
+
+        loginService.verifyEmail(code);
+        return new ApiResponseJson(HttpStatus.OK, "OK");
+    }
 }
