@@ -1,14 +1,12 @@
 package com.bandall.location_share.web.controller;
 
-import com.bandall.location_share.domain.dto.MemberCreateDto;
-import com.bandall.location_share.domain.dto.MemberLoginDto;
-import com.bandall.location_share.domain.dto.MemberUpdateDto;
-import com.bandall.location_share.domain.dto.TokenInfoDto;
+import com.bandall.location_share.domain.dto.*;
 import com.bandall.location_share.domain.login.LoginService;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.repository.query.Param;
@@ -29,7 +27,7 @@ public class LoginController {
     private final LoginService loginService;
 
     @PostMapping("/api/account/create")
-    public ApiResponseJson createAccount(@Validated @ModelAttribute MemberCreateDto memberCreateDto, BindingResult bindingResult) {
+    public ApiResponseJson createAccount(@Valid @RequestBody MemberCreateDto memberCreateDto, BindingResult bindingResult) {
         log.info("Creating Account={}", memberCreateDto);
         if(bindingResult.hasErrors()) {
             log.info("Wrong Data");
@@ -46,7 +44,7 @@ public class LoginController {
     }
 
     @PostMapping("/api/account/auth")
-    public ApiResponseJson authAccount(@Validated @ModelAttribute MemberLoginDto memberLoginDto, BindingResult bindingResult) {
+    public ApiResponseJson authAccount(@Valid @RequestBody MemberLoginDto memberLoginDto, BindingResult bindingResult) {
         log.info("Authenticating Account=>{}", memberLoginDto.getEmail());
         if(bindingResult.hasErrors()) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
@@ -59,7 +57,7 @@ public class LoginController {
     }
 
     @PostMapping("/api/account/refresh")
-    public ApiResponseJson refreshToken(@Validated @ModelAttribute TokenInfoDto tokenInfoDto, BindingResult bindingResult) {
+    public ApiResponseJson refreshToken(@Valid @RequestBody TokenInfoDto tokenInfoDto, BindingResult bindingResult) {
         log.info("refresh={}", tokenInfoDto);
         if(bindingResult.hasErrors()) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
@@ -71,10 +69,12 @@ public class LoginController {
     }
 
     // 아래부터는 access 토큰이 있어야 접근 가능
-
     @PostMapping("/api/account/logout")
-    public ApiResponseJson logout(@RequestHeader("Authorization") String accessToken, String refreshToken, @AuthenticationPrincipal UserPrinciple user) {
-        log.info("logout request");
+    public ApiResponseJson logout(@RequestHeader("Authorization") String accessToken, Map<String, String> refreshTokenMap,
+                                  @AuthenticationPrincipal UserPrinciple user
+    ) {
+        String refreshToken = refreshTokenMap.get("refreshToken");
+        log.info("logout request refreshToken={}", refreshToken);
         if(!StringUtils.hasText(refreshToken)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
@@ -84,10 +84,10 @@ public class LoginController {
         return new ApiResponseJson(HttpStatus.OK, "Logout Success. Bye ~");
     }
 
-    // Binding Results 사용 X
+    // Binding Results 사용 X 한쪽 값만 채워져있음
     @PostMapping("/api/account/update-username")
-    public ApiResponseJson updateUsername(MemberUpdateDto memberUpdateDto, @AuthenticationPrincipal UserPrinciple user) {
-        log.info("Updating Username..email=>{} new username={}", user.getEmail(), memberUpdateDto.getUsername());
+    public ApiResponseJson updateUsername(@RequestBody MemberUpdateDto memberUpdateDto, @AuthenticationPrincipal UserPrinciple user) {
+        log.info("Updating Username..email=>{} new_username={}", user.getEmail(), memberUpdateDto.getUsername());
         String username = memberUpdateDto.getUsername();
         if(!StringUtils.hasText(username)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
@@ -103,7 +103,7 @@ public class LoginController {
     }
 
     @PostMapping("/api/account/update-password")
-    public ApiResponseJson updatePassword(MemberUpdateDto memberUpdateDto, @AuthenticationPrincipal UserPrinciple user) {
+    public ApiResponseJson updatePassword(@RequestBody MemberUpdateDto memberUpdateDto, @AuthenticationPrincipal UserPrinciple user) {
         log.info("Updating Password..email=>{}", user.getEmail());
         String newPassword = memberUpdateDto.getNewPassword();
         String oldPassword = memberUpdateDto.getOldPassword();
@@ -118,7 +118,8 @@ public class LoginController {
     }
 
     @PostMapping("/api/account/delete")
-    public ApiResponseJson deleteAccount(@RequestHeader("Authorization") String accessToken, @AuthenticationPrincipal UserPrinciple user, String password) {
+    public ApiResponseJson deleteAccount(@RequestHeader("Authorization") String accessToken, @RequestBody Map<String, String> passwordMap, @AuthenticationPrincipal UserPrinciple user) {
+        String password = passwordMap.get("password");
         log.info("Deleting User={}", user.getEmail());
         if(!StringUtils.hasText(password)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
@@ -130,7 +131,8 @@ public class LoginController {
     }
 
     @PostMapping("/api/email-verification")
-    public ApiResponseJson verifyEmail(String code) {
+    public ApiResponseJson verifyEmail(@RequestBody Map<String, String> codeMap) {
+        String code = codeMap.get("code");
         if(!StringUtils.hasText(code)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }

@@ -5,12 +5,14 @@ import com.bandall.location_share.domain.member.enums.LoginType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = {"password"})
-public class Member {
+public class Member extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,6 +36,8 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    private LocalDateTime lastAccessedTime;
 
     public Member updatePassword(String password) {
         this.password = password;

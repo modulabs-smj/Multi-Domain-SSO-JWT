@@ -104,12 +104,6 @@ public class OAuth2LoginService {
         blackListRepository.setBlackList(accessToken, email);
     }
 
-    public void test(String email) {
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("계정이 존재하지 않습니다."));
-        memberRepository.deleteById(member.getId());
-    }
-
     private boolean isEmailValid(String email) {
         return Pattern.matches(EMAIL_REGEX_PATTERN, email);
     }

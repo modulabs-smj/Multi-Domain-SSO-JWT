@@ -2,12 +2,15 @@ package com.bandall.location_share.domain.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Data
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TokenInfoDto {
     // 아래 2개 필드는 controller에서 전달 받을 때 사용
     @NotNull

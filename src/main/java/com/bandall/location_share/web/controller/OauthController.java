@@ -33,9 +33,8 @@ public class OauthController {
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
 
-    @GetMapping("/test")
+    @GetMapping("/whoami")
     public ApiResponseJson test(@AuthenticationPrincipal UserPrinciple user) {
-        loginService.test(user.getEmail());
-        return new ApiResponseJson(HttpStatus.OK, "OK");
+        return new ApiResponseJson(HttpStatus.OK, user);
     }
 }
