@@ -4,7 +4,7 @@ import com.bandall.location_share.aop.trace.MethodLogger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+//@Configuration
 public class AopConfig {
     @Bean
     public MethodLoggerAspect methodLoggerAspect() {

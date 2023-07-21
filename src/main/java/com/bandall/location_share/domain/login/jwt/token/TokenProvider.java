@@ -158,8 +158,9 @@ public class TokenProvider {
     // 토큰 유효성 검사 -> access, refresh 토큰 둘 다 검증하는 함수이므로 access 토큰 블랙리스트는 체크하지 않는다.
     public TokenValidationResult validateToken(String token) {
         TokenValidationResult validResult = new TokenValidationResult(false, TokenType.ACCESS, null,null, null);
+        Claims claims = null;
         try {
-            Claims claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
+            claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
             if(claims.get(KEY_AUTHORITIES) == null) validResult.setTokenType(TokenType.REFRESH);
 
             validResult.setResult(true);
@@ -167,8 +168,11 @@ public class TokenProvider {
             validResult.setTokenStatus(TokenStatus.TOKEN_VALID);
             return validResult;
         } catch (ExpiredJwtException e) {
+            // 만료된 토큰의 경우에도 tokenId를 부여할 수 있게 수정
             log.info("만료된 jwt 토큰");
+            claims = e.getClaims();
             validResult.setTokenStatus(TokenStatus.TOKEN_EXPIRED);
+            validResult.setTokenId(claims.get(KEY_TOKEN_ID, String.class));
         } catch (SecurityException | MalformedJwtException e) {
             log.info("잘못된 jwt 서명");
             validResult.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
@@ -218,7 +222,7 @@ public class TokenProvider {
 //            totalResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
 //            return totalResult;
 //        }
-
+        log.info("{} {}", refTokenRes.getTokenId(), aTokenRes.getTokenId());
         if(!refTokenRes.getTokenId().equals(aTokenRes.getTokenId())) {
             log.info("Wrong refresh & access token pair");
             totalResult.setTokenStatus(TokenStatus.TOKEN_ID_NOT_MATCH);
