@@ -32,9 +32,4 @@ public class OauthController {
         loginService.deleteSocialUser(socialAccessToken, accessToken.substring(7), LoginType.KAKAO, user.getEmail());
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
-
-    @GetMapping("/whoami")
-    public ApiResponseJson test(@AuthenticationPrincipal UserPrinciple user) {
-        return new ApiResponseJson(HttpStatus.OK, user);
-    }
 }

@@ -4,17 +4,14 @@ import com.bandall.location_share.domain.dto.*;
 import com.bandall.location_share.domain.login.LoginService;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import com.bandall.location_share.domain.member.Member;
-import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -58,23 +55,23 @@ public class LoginController {
 
     @PostMapping("/api/account/refresh")
     public ApiResponseJson refreshToken(@Valid @RequestBody TokenInfoDto tokenInfoDto, BindingResult bindingResult) {
-        log.info("refresh={}", tokenInfoDto);
+        log.info("Refreshing Token={}", tokenInfoDto);
         if(bindingResult.hasErrors()) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
 
         TokenInfoDto newTokenInfo = loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
-        log.info("Reissued Token Info=>{}", newTokenInfo);
+        log.info("Refreshed Token Info=>{}", newTokenInfo);
         return new ApiResponseJson(HttpStatus.OK, newTokenInfo);
     }
 
     // 아래부터는 access 토큰이 있어야 접근 가능
     @PostMapping("/api/account/logout")
-    public ApiResponseJson logout(@RequestHeader("Authorization") String accessToken, Map<String, String> refreshTokenMap,
+    public ApiResponseJson logout(@RequestHeader("Authorization") String accessToken, @RequestBody Map<String, String> json,
                                   @AuthenticationPrincipal UserPrinciple user
     ) {
-        String refreshToken = refreshTokenMap.get("refreshToken");
-        log.info("logout request refreshToken={}", refreshToken);
+        String refreshToken = json.get("refreshToken");
+        log.info("Logout request refreshToken={}", refreshToken);
         if(!StringUtils.hasText(refreshToken)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
@@ -118,8 +115,9 @@ public class LoginController {
     }
 
     @PostMapping("/api/account/delete")
-    public ApiResponseJson deleteAccount(@RequestHeader("Authorization") String accessToken, @RequestBody Map<String, String> passwordMap, @AuthenticationPrincipal UserPrinciple user) {
-        String password = passwordMap.get("password");
+    public ApiResponseJson deleteAccount(@RequestHeader("Authorization") String accessToken, @RequestBody Map<String, String> json,
+                                         @AuthenticationPrincipal UserPrinciple user) {
+        String password = json.get("password");
         log.info("Deleting User={}", user.getEmail());
         if(!StringUtils.hasText(password)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
@@ -130,9 +128,22 @@ public class LoginController {
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
 
+    @GetMapping("/api/email-verification")
+    public ApiResponseJson getVerifyEmail(@RequestBody Map<String, String> json) {
+        String email = json.get("email");
+        log.info("Sending Verify Email to={}", email);
+        if(!StringUtils.hasText(email)) {
+            throw new IllegalArgumentException("잘못된 요청입니다.");
+        }
+
+        loginService.sendVerifyEmail(email);
+        return new ApiResponseJson(HttpStatus.OK, "OK");
+    }
+
     @PostMapping("/api/email-verification")
-    public ApiResponseJson verifyEmail(@RequestBody Map<String, String> codeMap) {
-        String code = codeMap.get("code");
+    public ApiResponseJson verifyEmail(@RequestBody Map<String, String> json) {
+        String code = json.get("code");
+        log.info("Verifying code={}", code);
         if(!StringUtils.hasText(code)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }

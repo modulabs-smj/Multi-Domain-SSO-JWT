@@ -22,6 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -72,7 +74,7 @@ public class LoginService {
 
             // 이메일 인증이 안되어 있을 경우 (트랜잭션 전파로 인해 다른 클래스에 역할 위임)
             if(!((MemberDetails) authentication.getPrincipal()).isEmailVerified()) {
-                // verificationService.sendVerificationEmail(email); // 인증 이메일 재전송 기능 만들어서 대체하기
+                verificationService.sendVerificationEmail(email); // 인증 이메일 재전송 기능 만들어서 대체하기
                 throw new EmailNotVerified("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.");
             }
 
@@ -189,6 +191,20 @@ public class LoginService {
 
     public void verifyEmail(String code) {
         verificationService.verifyEmail(code);
+    }
+
+    public void sendVerifyEmail(String email) {
+        verificationService.sendVerificationEmail(email);
+    }
+
+    public Map<String, String> getUserInfo(String email) {
+        Member member = memberRepository.findByEmail(email).orElseThrow(RuntimeException::new);
+
+        HashMap<String, String> map = new HashMap<>();
+        map.put("username", member.getUsername());
+        map.put("email", member.getEmail());
+        map.put("profileImageUrl", member.getProfileImageUri());
+        return map;
     }
 
     //패스워드 설정 정책
