@@ -20,7 +20,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // message 전송 위해 server.error.include-message=always 설정
+    // message 전송 위해 server.error.include-message=always 설정 => 커스텀 sendError 사용으로 never로 설정 변경
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         // request에 담아둔 TokenValidationResult를 이용해 예외를 구분해 처리
