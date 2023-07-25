@@ -6,6 +6,7 @@ import com.bandall.location_share.domain.exceptions.SocialLoginOnlyException;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import com.bandall.location_share.web.controller.json.Code;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.TypeMismatchException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -43,15 +44,15 @@ public class ExceptionAdvice {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ApiResponseJson badRequestJson() {
-        return new ApiResponseJson(HttpStatus.BAD_REQUEST, Code.WRONG_PARAMETER, Map.of("errMsg", "잘못된 요청입니다."));
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ApiResponseJson badRequest(Exception e) {
+        return new ApiResponseJson(HttpStatus.BAD_REQUEST, Code.WRONG_PARAMETER, Map.of("errMsg", e.getMessage()));
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class})
-    public ApiResponseJson badRequest(Exception e) {
-        return new ApiResponseJson(HttpStatus.BAD_REQUEST, Code.WRONG_PARAMETER, Map.of("errMsg", e.getMessage()));
+    @ExceptionHandler({MethodArgumentNotValidException.class, TypeMismatchException.class, HttpMessageNotReadableException.class})
+    public ApiResponseJson badRequestBody(Exception e) {
+        return new ApiResponseJson(HttpStatus.BAD_REQUEST, Code.WRONG_PARAMETER, Map.of("errMsg", "잘못된 요청입니다."));
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -74,7 +75,7 @@ public class ExceptionAdvice {
 
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(EmailNotVerified.class)
-    public ApiResponseJson emailNotVerified(Exception e) {
-        return new ApiResponseJson(HttpStatus.UNAUTHORIZED, Code.EMAIL_NOT_VERIFIED, Map.of("errMsg", e.getMessage()));
+    public ApiResponseJson emailNotVerified(EmailNotVerified e) {
+        return new ApiResponseJson(HttpStatus.UNAUTHORIZED, Code.EMAIL_NOT_VERIFIED, Map.of("errMsg", e.getMessage(), "email", e.getEmail()));
     }
 }

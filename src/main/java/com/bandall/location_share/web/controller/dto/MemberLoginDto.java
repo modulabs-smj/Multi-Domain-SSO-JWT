@@ -1,4 +1,4 @@
-package com.bandall.location_share.domain.dto;
+package com.bandall.location_share.web.controller.dto;
 
 import com.bandall.location_share.domain.member.enums.EnumValidation;
 import com.bandall.location_share.domain.member.enums.LoginType;

@@ -1,4 +1,4 @@
-package com.bandall.location_share.domain.dto;
+package com.bandall.location_share.domain.login.jwt.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

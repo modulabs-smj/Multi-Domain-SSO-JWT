@@ -1,7 +1,7 @@
 package com.bandall.location_share.domain.login;
 
-import com.bandall.location_share.domain.dto.MemberCreateDto;
-import com.bandall.location_share.domain.dto.TokenInfoDto;
+import com.bandall.location_share.web.controller.dto.MemberCreateDto;
+import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
 import com.bandall.location_share.domain.exceptions.EmailNotVerified;
 import com.bandall.location_share.domain.login.jwt.token.*;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
@@ -74,8 +74,8 @@ public class LoginService {
 
             // 이메일 인증이 안되어 있을 경우 (트랜잭션 전파로 인해 다른 클래스에 역할 위임)
             if(!((MemberDetails) authentication.getPrincipal()).isEmailVerified()) {
-                verificationService.sendVerificationEmail(email); // 인증 이메일 재전송 기능 만들어서 대체하기
-                throw new EmailNotVerified("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.");
+                verificationService.sendVerificationEmail(email);
+                throw new EmailNotVerified("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.", email);
             }
 
             // 생성된 authentication 정보를 토대로 access, refresh 토큰 생성
@@ -189,8 +189,8 @@ public class LoginService {
         blackListRepository.setBlackList(accessToken, email);
     }
 
-    public void verifyEmail(String code) {
-        verificationService.verifyEmail(code);
+    public void verifyEmail(String email, String code) {
+        verificationService.verifyEmail(email, code);
     }
 
     public void sendVerifyEmail(String email) {

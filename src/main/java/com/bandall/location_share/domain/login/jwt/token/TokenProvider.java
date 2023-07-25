@@ -1,9 +1,8 @@
 package com.bandall.location_share.domain.login.jwt.token;
 
 import com.bandall.location_share.aop.LoggerAOP;
-import com.bandall.location_share.domain.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
 import com.bandall.location_share.domain.member.UserPrinciple;
-import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.MemberDetails;
 import io.jsonwebtoken.*;

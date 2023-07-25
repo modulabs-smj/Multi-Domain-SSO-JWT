@@ -1,4 +1,4 @@
-package com.bandall.location_share.domain.dto;
+package com.bandall.location_share.domain.login.jwt.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
