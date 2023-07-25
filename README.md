@@ -1,4 +1,4 @@
-# Table of Contents
+# 목차
 
 1. [LoginController](#logincontroller)
   - [1.1. 계정 생성](#1-계정-생성)
