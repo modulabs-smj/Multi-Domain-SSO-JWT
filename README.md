@@ -8,9 +8,9 @@
 
   ```json
   {
-    "loginType": "NONE",
-    "email": "[email]",
-    "password": "[password]"
+    "email" : "[email]",
+    "password": "[password]",
+    "username" : "[username]"
   }
   ```
 
