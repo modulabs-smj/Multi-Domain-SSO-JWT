@@ -1,8 +1,6 @@
-# LoginController API Documentation
-
+# LoginController
 ## Endpoints
-
-### 1. Create Account
+### 1. 계정 생성
 
 - **URL:** `/api/account/create`
 - **Method:** `POST`
@@ -10,9 +8,9 @@
 
   ```json
   {
-    "email": "user@example.com",
-    "username": "your_username",
-    "password": "your_password"
+    "loginType": "NONE",
+    "email": "[email]",
+    "password": "[password]"
   }
   ```
 
@@ -20,13 +18,17 @@
 
   ```json
   {
-    "loginType": "email",
-    "email": "user@example.com",
-    "username": "your_username"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": {
+        "loginType": "NONE",
+        "username": "[username]",
+        "email": "[email]"
+    }
   }
   ```
 
-### 2. Authenticate (Auth) Account
+### 2. Email, Password 로그인
 
 - **URL:** `/api/account/auth`
 - **Method:** `POST`
@@ -34,8 +36,9 @@
 
   ```json
   {
-    "email": "user@example.com",
-    "password": "your_password"
+    "loginType": "NONE",
+    "email": "[email]",
+    "password": "[password]"
   }
   ```
 
@@ -43,12 +46,20 @@
 
   ```json
   {
-    "accessToken": "access_token_string",
-    "refreshToken": "refresh_token_string"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": {
+        "accessToken": "[access_token_string]",
+        "refreshToken": "[refresh_token_string]",
+        "accessTokenExpireTime": "[access_token_expire_time]",
+        "refreshTokenExpireTime": "[refresh_token_expireTime]",
+        "ownerEmail": "[email]",
+        "tokenId": "[token id]"
+    }
   }
   ```
 
-### 3. Refresh Token
+### 3. Access 토큰 재발급
 
 - **URL:** `/api/account/refresh`
 - **Method:** `POST`
@@ -56,8 +67,8 @@
 
   ```json
   {
-    "accessToken": "old_access_token_string",
-    "refreshToken": "old_refresh_token_string"
+    "accessToken": "[old_access_token_string]",
+    "refreshToken": "[old_refresh_token_string]"
   }
   ```
 
@@ -65,46 +76,56 @@
 
   ```json
   {
-    "accessToken": "new_access_token_string",
-    "refreshToken": "new_refresh_token_string"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": {
+        "accessToken": "[new_access_token_string]",
+        "refreshToken": "[new_refresh_token_string]",
+        "accessTokenExpireTime": "[new_access_token_expire_time]",
+        "refreshTokenExpireTime": "[new_refresh_token_expireTime]",
+        "ownerEmail": "[email]",
+        "tokenId": "[new_token id]"
+    }
   }
   ```
 
-### 4. Logout
+### 4. 로그아웃
 
 - **URL:** `/api/account/logout`
 - **Method:** `POST`
 - **Headers:**
 
-    - `Authorization:` `Bearer access_token_string`
+    - `Authorization:` `Bearer [access_token_string]`
 - **RequestBody:**
 
   ```json
   {
-    "refreshToken": "your_refresh_token_string"
+    "refreshToken": "[refresh_token_string]"
   }
   ```
-
+  Access 토큰 만료 시 400 ERROR
 - **Success Response:** (HTTP Status 200)
 
   ```json
   {
-    "message": "Logout Success. Bye ~"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": "Logout Success. Bye ~"
   }
   ```
 
-### 5. Update Username
+### 5. 유저 이름 변경
 
 - **URL:** `/api/account/update-username`
 - **Method:** `POST`
 - **Headers:**
 
-    - `Authorization:` `Bearer access_token_string`
+    - `Authorization:` `Bearer [access_token_string]`
 - **RequestBody:**
 
   ```json
   {
-    "username": "new_username"
+    "username": "[new_username]"
   }
   ```
 
@@ -112,18 +133,22 @@
 
   ```json
   {
-    "email": "user@example.com",
-    "username": "new_username"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": {
+        "email": "[email]",
+        "username": "[new_username]"
+    }
   }
   ```
 
-### 6. Update Password
+### 6. 비밀번호 변경
 
 - **URL:** `/api/account/update-password`
 - **Method:** `POST`
 - **Headers:**
 
-    - `Authorization:` `Bearer access_token_string`
+    - `Authorization:` `Bearer [access_token_string]`
 - **RequestBody:**
 
   ```json
@@ -137,11 +162,13 @@
 
   ```json
   {
-    "message": "OK"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": "OK"
   }
   ```
 
-### 7. Delete Account
+### 7. 계정 삭제
 
 - **URL:** `/api/account/delete`
 - **Method:** `POST`
@@ -152,7 +179,7 @@
 
   ```json
   {
-    "password": "users_password"
+    "password": "[users_password]"
   }
   ```
 
@@ -160,19 +187,21 @@
 
   ```json
   {
-    "message": "OK"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": "OK"
   }
   ```
 
-### 8. Get Verify Email
+### 8. 이메일 인증 코드 발급
 
-- **URL:** `/api/email-verification`
+- **URL:** `/api/email-verification?email=[email]`
 - **Method:** `GET`
 - **RequestBody:**
 
   ```json
   {
-    "email": "user@example.com"
+    "email": "[email]"
   }
   ```
 
@@ -180,11 +209,13 @@
 
   ```json
   {
-    "message": "OK"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": "OK"
   }
   ```
 
-### 9. Verify Email
+### 9. 이메일 인증 코드 제출
 
 - **URL:** `/api/email-verification`
 - **Method:** `POST`
@@ -192,7 +223,8 @@
 
   ```json
   {
-    "code": "verification_code"
+    "email": "[email]",
+    "code": "[verification_code]"
   }
   ```
 
@@ -200,7 +232,65 @@
 
   ```json
   {
-    "message": "OK"
+    "httpStatus": "OK",
+    "code": 200,
+    "data": "OK"
   }
-```
+  ```
 
+# OAuthContorller
+## Endpoints
+### 1. 소셜 로그인
+
+- **URL:** `/oauth/login/kakao?code=[kakao_access_token]`
+- **Method:** `GET`
+- **RequestBody:**
+
+  ```json
+  {
+    "loginType": "NONE",
+    "email": "[email]",
+    "password": "[password]"
+  }
+  ```
+
+- **Success Response:** (HTTP Status 200)
+
+  ```json
+  {
+    "httpStatus": "OK",
+    "code": 200,
+    "data": {
+        "accessToken": "[access_token_string]",
+        "refreshToken": "[refresh_token_string]",
+        "accessTokenExpireTime": "[access_token_expire_time]",
+        "refreshTokenExpireTime": "[refresh_token_expireTime]",
+        "ownerEmail": "[email]",
+        "tokenId": "[token id]"
+    }
+  }
+  ```
+
+### 2. 계정 삭제
+
+- **URL:** `/oauth/unlink/kakao`
+- **Method:** `POST`
+- **Headers:**
+  - `Authorization:` `Bearer [access_token_string]`
+- **RequestBody:**
+
+  ```json
+  {
+    "code": "[kakao_access_token]"
+  }
+  ```
+
+- **Success Response:** (HTTP Status 200)
+
+  ```json
+  {
+    "httpStatus": "OK",
+    "code": 200,
+    "data": "OK"
+  }
+  ```
