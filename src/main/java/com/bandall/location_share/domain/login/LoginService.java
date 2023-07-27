@@ -60,7 +60,7 @@ public class LoginService {
                 .username(memberCreateDto.getUsername())
                 .role(Role.ROLE_USER).build();
 
-        verificationService.sendVerificationEmail(member.getEmail());
+//        verificationService.sendVerificationEmail(member.getEmail());
         return memberRepository.save(member);
     }
 
