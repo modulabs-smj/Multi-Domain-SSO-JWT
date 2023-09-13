@@ -54,17 +54,16 @@ public class LoginService {
         }
 
         Member member = Member.builder()
-                .loginType(LoginType.NONE)
+                .loginType(LoginType.EMAIL_PW)
                 .email(memberCreateDto.getEmail())
                 .password(passwordEncoder.encode(memberCreateDto.getPassword()))
                 .username(memberCreateDto.getUsername())
                 .role(Role.ROLE_USER).build();
 
-//        verificationService.sendVerificationEmail(member.getEmail());
         return memberRepository.save(member);
     }
 
-    // OAuth 적용 시 NONE 타입만 사용 가능하도록 수정 + Email 인증 확인 로직 추가
+    // OAuth 적용 시 EMAIL_PW 타입만 사용 가능하도록 수정 + Email 인증 확인 로직 추가
     public TokenInfoDto loginMember(String email, String password) {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email, password);
 
@@ -97,8 +96,7 @@ public class LoginService {
     public TokenInfoDto refreshToken(String accessToken, String refreshToken) {
         TokenValidationResult validationResult = tokenProvider.isAccessTokenAndRefreshTokenValid(accessToken, refreshToken);
         // 1. validateToken에 tokenId 값 추가해서 검사 -> 토큰 교차 방지 [굳이 필요한지는 모르겠음(허점이긴 하나 활용할 수 있는 공격기법이 없음)]
-        // 2. 그러면 굳이 블랙리스트를 안 뒤져봐도 검증 가능 + db에 refresh 토큰 value를 저장하지 않아도 됨(tokenID만 저장)
-        // 3. redis가 더 빠른 관계로 구현 보류
+        // 2. tokenId를 통해 blackList 없이 검증 가능 + db에 refresh 토큰 value를 저장하지 않아도 됨(tokenID만 저장)
         switch (validationResult.getTokenStatus()) {
             case TOKEN_EXPIRED -> throw new IllegalArgumentException("만료된 Refresh 토큰입니다.");
             case TOKEN_WRONG_SIGNATURE -> throw new IllegalArgumentException("잘못된 토큰입니다.");
@@ -115,7 +113,7 @@ public class LoginService {
             return new IllegalArgumentException("계정이 존재하지 않습니다.");
         });
 
-        // 정책에 따라서 이전 리프레시 토큰의 만료 시간을 추가 tokenId 사용
+        // 정책에 따라서 이전 리프레시 토큰의 만료 시간을 그대로 유지할 수도있음(주기적 로그인)
         TokenInfoDto tokenInfoDto = tokenProvider.createTokenWithMember(member);
         RefreshToken newRefreshToken = RefreshToken.builder()
                 .ownerEmail(tokenInfoDto.getOwnerEmail())
@@ -158,7 +156,7 @@ public class LoginService {
             return new IllegalArgumentException("계정이 존재하지 않습니다.");
         });
 
-        if(member.getLoginType() != LoginType.NONE) {
+        if(member.getLoginType() != LoginType.EMAIL_PW) {
             log.info("소셜 로그인 유저의 잘못된 비밀번호 변경 요청");
             throw new BadCredentialsException("소셜 로그인 서비스를 사용 중인 계정으로 비밀번호가 존재하지 않습니다.");
         }

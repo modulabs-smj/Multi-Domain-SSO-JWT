@@ -53,7 +53,7 @@ public class OAuth2LoginService {
             Member newMember = Member.builder()
                     .email(email)
                     .password("")
-                    .loginType(LoginType.KAKAO)
+                    .loginType(LoginType.SOCIAL_KAKAO)
                     .username(profile.getName())
                     .role(Role.ROLE_USER)
                     .build();
@@ -65,7 +65,7 @@ public class OAuth2LoginService {
 
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new DbException("db에 오류 발생"));
 
-        if(member.getLoginType() == LoginType.NONE) {
+        if(member.getLoginType() == LoginType.EMAIL_PW) {
             log.info("잘못된 로그인 타입");
             throw new IllegalArgumentException("이 계정은 소셜 로그인을 사용하지 않습니다.");
         }

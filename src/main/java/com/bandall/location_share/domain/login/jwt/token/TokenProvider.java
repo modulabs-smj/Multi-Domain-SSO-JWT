@@ -155,11 +155,14 @@ public class TokenProvider {
 //    }
 
     // 토큰 유효성 검사 -> access, refresh 토큰 둘 다 검증하는 함수이므로 access 토큰 블랙리스트는 체크하지 않는다.
+    // Redis 연관 코드 삭제
     public TokenValidationResult validateToken(String token) {
         TokenValidationResult validResult = new TokenValidationResult(false, TokenType.ACCESS, null,null, null);
         Claims claims = null;
         try {
             claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
+
+            // 토큰에 권한정보가 없을 경우 Refresh 토큰
             if(claims.get(KEY_AUTHORITIES) == null) validResult.setTokenType(TokenType.REFRESH);
 
             validResult.setResult(true);
@@ -181,11 +184,8 @@ public class TokenProvider {
         } catch (IllegalArgumentException e) {
             log.info("잘못된 jwt 토큰");
             validResult.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
-        } catch (Exception e) {
-            log.error("Redis 에러");
-            validResult.setTokenStatus(TokenStatus.TOKEN_VALIDATION_TRY_FAILED);
-            validResult.setException(e);
         }
+
         return validResult;
     }
 
@@ -214,16 +214,17 @@ public class TokenProvider {
             return totalResult;
         }
 
-//        // claim으로 tokenID를 비교하는 로직으로 대체하려 했으나 redis가 속도가 더 빨라서 취소
-//        // => claim을 추가적으로 안할 수 있게 코드 개선
+//        // TokenId 쌍 검증으로 블랙리스트 확인 필요X => 블랙리스트 등록 시 같은 쌍인 Refresh 토큰 삭제
 //        if(isAccessTokenBlackList(accessToken)) {
 //            log.info("Discarded Token");
 //            totalResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
 //            return totalResult;
 //        }
-        log.info("{} {}", refTokenRes.getTokenId(), aTokenRes.getTokenId());
+//        log.info("{} {}", refTokenRes.getTokenId(), aTokenRes.getTokenId());
+
+        // tokenId 쌍 검증
         if(!refTokenRes.getTokenId().equals(aTokenRes.getTokenId())) {
-            log.info("Wrong refresh & access token pair");
+            log.info("Wrong refresh & access tokenId pair");
             totalResult.setTokenStatus(TokenStatus.TOKEN_ID_NOT_MATCH);
             return totalResult;
         }

@@ -1,8 +1,7 @@
-package com.bandall.location_share.web.controller;
+package com.bandall.location_share.web.controller.advice;
 
 import com.bandall.location_share.domain.exceptions.BadResponseException;
 import com.bandall.location_share.domain.exceptions.EmailNotVerified;
-import com.bandall.location_share.domain.exceptions.SocialLoginOnlyException;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import com.bandall.location_share.web.controller.json.Code;
 import lombok.extern.slf4j.Slf4j;

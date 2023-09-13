@@ -33,35 +33,41 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
-        if(StringUtils.hasText(token)) {
-            // 토큰 유효성 검사
-            TokenValidationResult tokenValidationResult = tokenProvider.validateToken(token);
-            boolean isBlackList = tokenProvider.isAccessTokenBlackList(token);
+        // jwt 토큰 예외 구분 처리를 위해 request에 tokenValidationResult를 담아 EntryPoint에 전달
 
-            if(tokenValidationResult.getResult() && !isBlackList && tokenValidationResult.getTokenType() == TokenType.ACCESS) {
-                // 1. 정상적인 토큰인 경우
-                Authentication authentication = tokenProvider.getAuthentication(token);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("AUTH SUCCESS : {},", authentication.getName());
-            } else {
-                // 2. 잘못된 토큰일 경우 (Refresh token을 넣은 경우)
-                // jwt 토큰 예외 구분 처리를 위해 request에 tokenValidationResult를 담아 EntryPoint에 전달
-                if(isBlackList) {
-                    tokenValidationResult.setResult(false);
-                    tokenValidationResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
-                    tokenValidationResult.setException(new DiscardedJwtException("Toekn discarded"));
-                }
-                request.setAttribute("result", tokenValidationResult);
-            }
-        } else {
-            // 3. Authorization 헤더가 없는 경우
+        // Authorization 헤더가 없는 경우
+        if(!StringUtils.hasText(token)) {
             log.info("No Authorization Header");
             request.setAttribute("result",
                     new TokenValidationResult(false, null, null, TokenStatus.NO_AUTH_HEADER, null)
             );
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        filterChain.doFilter(request, response);
+        TokenValidationResult tokenValidationResult = tokenProvider.validateToken(token);
+
+        // 잘못된 토큰일 경우 (잘못된 토큰, 블랙리스트, Refresh token을 넣은 경우)
+        if (!tokenValidationResult.getResult() || tokenValidationResult.getTokenType() != TokenType.ACCESS) {
+            request.setAttribute("result", tokenValidationResult);
+            filterChain.doFilter(request,response);
+            return;
+        }
+
+        // 토큰이 블랙리스트인 경우
+        if (tokenProvider.isAccessTokenBlackList(token)) {
+            tokenValidationResult.setResult(false);
+            tokenValidationResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
+            tokenValidationResult.setException(new DiscardedJwtException("Token already discarded"));
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 정상적인 토큰인 경우 SecurityContext에 Authentication 설정
+        Authentication authentication = tokenProvider.getAuthentication(token);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.info("AUTH SUCCESS : {},", authentication.getName());
+        filterChain.doFilter(request,response);
     }
 
     // Request Header에서 토큰 정보 추출

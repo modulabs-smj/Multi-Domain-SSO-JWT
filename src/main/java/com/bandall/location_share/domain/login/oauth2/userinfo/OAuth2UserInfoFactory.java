@@ -1,12 +1,10 @@
 package com.bandall.location_share.domain.login.oauth2.userinfo;
 
 import com.bandall.location_share.domain.member.enums.LoginType;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.security.AuthProvider;
 import java.util.Map;
 
 @Slf4j
@@ -20,21 +18,21 @@ public class OAuth2UserInfoFactory {
 
     public OAuth2UserInfo getOAuth2UserInfo(LoginType loginType, Map<String, Object> attributes) {
         switch (loginType) {
-            case KAKAO: return new KakaoUserInfo(attributes);
+            case SOCIAL_KAKAO: return new KakaoUserInfo(attributes);
             default: throw new IllegalArgumentException("Invalid Provider Type");
         }
     }
 
     public String getAuthorizationUri(LoginType loginType) {
         switch (loginType) {
-            case KAKAO: return kakaoAuthUri;
+            case SOCIAL_KAKAO: return kakaoAuthUri;
             default: throw new IllegalArgumentException("Invalid Provider Type");
         }
     }
 
     public String getUnlinkUri(LoginType loginType) {
         switch (loginType) {
-            case KAKAO: return kakaoUnlinkUri;
+            case SOCIAL_KAKAO: return kakaoUnlinkUri;
             default: throw new IllegalArgumentException("Invalid Provider Type");
         }
     }

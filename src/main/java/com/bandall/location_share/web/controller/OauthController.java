@@ -25,7 +25,7 @@ public class OauthController {
         if(!StringUtils.hasText(socialAccessToken)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
-        TokenInfoDto tokenInfoDto = loginService.socialLogin(socialAccessToken, LoginType.KAKAO);
+        TokenInfoDto tokenInfoDto = loginService.socialLogin(socialAccessToken, LoginType.SOCIAL_KAKAO);
         return new ApiResponseJson(HttpStatus.OK, tokenInfoDto);
     }
 
@@ -33,7 +33,7 @@ public class OauthController {
     public ApiResponseJson deleteAccount(@RequestHeader("Authorization") String accessToken, @RequestParam("code") String socialAccessToken,
                                          @AuthenticationPrincipal UserPrinciple user
     ) {
-        loginService.deleteSocialUser(socialAccessToken, accessToken.substring(7), LoginType.KAKAO, user.getEmail());
+        loginService.deleteSocialUser(socialAccessToken, accessToken.substring(7), LoginType.SOCIAL_KAKAO, user.getEmail());
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
 }
