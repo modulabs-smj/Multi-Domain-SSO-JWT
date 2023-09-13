@@ -1,7 +1,13 @@
 package com.bandall.location_share.web.controller.json;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.springframework.http.HttpStatus;
 
+@NoArgsConstructor
+@ToString
+@Getter
 public class ApiResponseJson {
     public HttpStatus httpStatus;
     public int code;

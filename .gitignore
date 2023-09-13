@@ -9,7 +9,8 @@ out/
 
 /src/main/resources/application.yml
 /src/main/resources/application-oauth.yml
-/src/test
+/src/test/java/com/bandall/location_share/domain
+/src/test/resources
 .gradle
 gradle
 build

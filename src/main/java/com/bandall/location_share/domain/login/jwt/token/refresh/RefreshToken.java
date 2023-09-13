@@ -19,7 +19,7 @@ public class RefreshToken extends BaseTimeEntity {
     @Column(length = 50)
     private String ownerEmail;
 
-    @Column(length = 300)
+    @Column(length = 300, name = "token_value")
     private String value;
 
     private Date expireTime;

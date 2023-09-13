@@ -14,6 +14,7 @@ import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.domain.member.enums.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -39,6 +40,10 @@ public class LoginService {
     private final RedisAccessTokenBlackListRepository blackListRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailVerificationService verificationService;
+
+    // 테스트 시 이메일 인증 OFF
+    @Value("${verification.email.do-email-verification}")
+    private boolean doEmailVerification;
 
     private static final String PASSWORD_REGEX_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$";
 
@@ -72,7 +77,7 @@ public class LoginService {
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
             // 이메일 인증이 안되어 있을 경우 (트랜잭션 전파로 인해 다른 클래스에 역할 위임)
-            if(!((MemberDetails) authentication.getPrincipal()).isEmailVerified()) {
+            if(!((MemberDetails) authentication.getPrincipal()).isEmailVerified() && doEmailVerification) {
                 verificationService.sendVerificationEmail(email);
                 throw new EmailNotVerified("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.", email);
             }
