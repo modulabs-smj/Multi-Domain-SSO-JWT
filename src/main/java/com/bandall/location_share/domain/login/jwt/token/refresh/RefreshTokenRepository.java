@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findRefreshTokenByValue(String value);
 
+    List<RefreshToken> findAllByOwnerEmail(String email);
+
     @Query("select r from RefreshToken r where r.expireTime < :now")
     List<RefreshToken> findRefreshTokensByExpireTimeBefore(@Param("now") Date expireTime);
 

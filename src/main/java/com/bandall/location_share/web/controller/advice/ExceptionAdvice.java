@@ -1,7 +1,7 @@
 package com.bandall.location_share.web.controller.advice;
 
 import com.bandall.location_share.domain.exceptions.BadResponseException;
-import com.bandall.location_share.domain.exceptions.EmailNotVerified;
+import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import com.bandall.location_share.web.controller.json.Code;
 import lombok.extern.slf4j.Slf4j;
@@ -73,8 +73,8 @@ public class ExceptionAdvice {
     }
 
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ExceptionHandler(EmailNotVerified.class)
-    public ApiResponseJson emailNotVerified(EmailNotVerified e) {
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ApiResponseJson emailNotVerified(EmailNotVerifiedException e) {
         return new ApiResponseJson(HttpStatus.UNAUTHORIZED, Code.EMAIL_NOT_VERIFIED, Map.of("errMsg", e.getMessage(), "email", e.getEmail()));
     }
 }

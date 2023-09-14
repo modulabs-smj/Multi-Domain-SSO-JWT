@@ -1,6 +1,6 @@
 package com.bandall.location_share.domain.exceptions;
 
-public class EmailNotVerified extends RuntimeException{
+public class EmailNotVerifiedException extends RuntimeException{
 
     private String email;
 
@@ -8,12 +8,12 @@ public class EmailNotVerified extends RuntimeException{
         return email;
     }
 
-    public EmailNotVerified(String message, String email) {
+    public EmailNotVerifiedException(String message, String email) {
         super(message);
         this.email = email;
     }
 
-    public EmailNotVerified(String message, Throwable cause) {
+    public EmailNotVerifiedException(String message, Throwable cause) {
         super(message, cause);
     }
 }

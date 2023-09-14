@@ -5,9 +5,11 @@ import com.bandall.location_share.domain.member.enums.LoginType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class MemberCreateDto {
 //    @EnumValidation(enumClass = LoginType.class)
 //    private LoginType loginType;

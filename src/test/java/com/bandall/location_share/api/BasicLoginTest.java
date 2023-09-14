@@ -1,7 +1,15 @@
 package com.bandall.location_share.api;
 
+import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
+import com.bandall.location_share.domain.login.LoginService;
+import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.jwt.token.RedisAccessTokenBlackListRepository;
+import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.MemberJpaRepository;
+import com.bandall.location_share.domain.member.enums.LoginType;
+import com.bandall.location_share.domain.member.enums.Role;
+import com.bandall.location_share.web.controller.dto.MemberCreateDto;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import com.bandall.location_share.web.controller.json.Code;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,6 +27,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,24 +44,28 @@ import static org.assertj.core.api.Assertions.*;
 @Rollback
 @Transactional
 @Slf4j
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 @ActiveProfiles("test")
 public class BasicLoginTest {
 
-    @LocalServerPort
-    private int port;
-
-    @Autowired
-    private TestRestTemplate restTemplate;
-
     @Autowired
     private MemberJpaRepository memberRepository;
+
+    @Autowired
+    private RedisAccessTokenBlackListRepository blackListRepository;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private LoginService loginService;
 
     @Autowired
     private ObjectMapper mapper;
 
     @Autowired
     private EntityManager em;
+
 
     @AfterEach
     void afterEach() {
@@ -60,96 +74,194 @@ public class BasicLoginTest {
         em.createNativeQuery("truncate table verification_code").executeUpdate();
     }
 
-//    @PostConstruct
-//    void postConstruct() {
-//        restTemplate.
-//    }
-
-    @Test
-    void test() {
-        String url = "http://localhost:"+ port+ "/test/a";
-        ResponseEntity<String> response = restTemplate.postForEntity(url, "", String.class);
-    }
-
     @Test
     @DisplayName("회원가입 테스트")
     @Transactional
     void 회원가입() throws JsonProcessingException {
         // given
-        Map<String, String> json = new HashMap<>();
-        json.put("email", "abc@gmail.com");
-        json.put("password", "bandallgom123!!");
-        json.put("username", "반달7");
+        String email = "abc@gmail.com";
+        String password = "12345aa6!";
+        String username = "bandallgom";
+        MemberCreateDto memberCreateDto = new MemberCreateDto(email, password, username);
 
         // when
-        String url = "http://localhost:"+ port+ "/api/account/create";
-        ResponseEntity<String> response = restTemplate.postForEntity(url, json, String.class);
-        ApiResponseJson responseJson = mapper.readValue(response.getBody(), ApiResponseJson.class);
-        log.info("responseJson={}", responseJson);
+        loginService.createMember(memberCreateDto);
 
         // then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Member findMember = memberRepository.findByEmail("abc@gmail.com").get();
-        assertThat(findMember.getUsername()).isEqualTo("반달7");
+        Member member = memberRepository.findByEmail(email).get();
+        assertThat(member.getUsername()).isEqualTo(username);
     }
 
     @Test
     @DisplayName("로그인 테스트[이메일 인증 전]")
-    void 로그인1() throws JsonProcessingException {
+    void 로그인1() {
         // given
-        addMember("abc@gmail.com", "bandallgom123!!", "반달77");
-        Map<String, String> json = new HashMap<>();
-        json.put("loginType", "EMAIL_PW");
-        json.put("email", "abc@gmail.com");
-        json.put("password", "bandallgom123!!");
-
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        addMember(email, password, username, false);
 
         // when
-        String url = "http://localhost:"+ port + "/api/account/auth";
 
         // then
-        assertThatThrownBy(() -> restTemplate.postForEntity(url, json, String.class)).isInstanceOf(ResourceAccessException.class);
+        assertThatThrownBy(() -> loginService.loginMember(email, password)).isInstanceOf(EmailNotVerifiedException.class);
     }
 
-    /**
-     * update 쿼리를 날려도 서버에 반영이 안됨
-     *
-     */
     @Test
-    @DisplayName("로그인 테스트[이메일 인증 생략]")
-    void 로그인2() throws JsonProcessingException {
+    @DisplayName("로그인 테스트[이메일 인증 후]")
+    void 로그인2() {
         // given
-        addMember("abc@gmail.com", "bandallgom123!!", "반달77");
-
-        Map<String, String> json = new HashMap<>();
-        json.put("loginType", "EMAIL_PW");
-        json.put("email", "abc@gmail.com");
-        json.put("password", "bandallgom123!!");
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        addMember(email, password, username, true);
 
         // when
-        String url = "http://localhost:"+ port + "/api/account/auth";
-        ResponseEntity<String> response = restTemplate.postForEntity(url, json, String.class);
-        ApiResponseJson responseJson = mapper.readValue(response.getBody(), ApiResponseJson.class);
+        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+        log.info("{}" , tokenInfoDto);
 
         // then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(responseJson.getCode()).isEqualTo(Code.NO_ERROR);
+        assertThat(tokenInfoDto.getOwnerEmail()).isEqualTo(email);
     }
 
-    private void addMember(String email, String password, String username) {
-        Map<String, String> json = new HashMap<>();
-        json.put("email", email);
-        json.put("password", password);
-        json.put("username", username);
+    @Test
+    @DisplayName("로그인 테스트[로그인 실패]")
+    void 로그인3() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        addMember(email, password, username, true);
 
-        String url = "http://localhost:"+ port+ "/api/account/create";
-        ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, json, String.class);
+        // then
+        assertThatThrownBy(() -> loginService.loginMember(email + "1234", password)).isInstanceOf(BadCredentialsException.class);
+        assertThatThrownBy(() -> loginService.loginMember(email, password + "1234")).isInstanceOf(BadCredentialsException.class);
     }
 
-    @Transactional
-    public void setEmailVerified(String email) {
-         em.createQuery("update Member m set m.isEmailVerified = true where m.email = :email")
-                 .setParameter("email", email)
-                 .executeUpdate();
+    @Test
+    @DisplayName("유저 이름 변경")
+    void 유저이름변경() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        String newUsername = "반달124";
+        addMember(email, password, username, true);
+
+        // when
+        loginService.updateUsername(email, newUsername);
+
+        // then
+        Member member = memberRepository.findByEmail(email).get();
+        assertThat(member.getUsername()).isEqualTo(newUsername);
+    }
+
+    @Test
+    @DisplayName("비밀번호 재설정")
+    void 비밀번호재설정() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        String newPassword = "jsm12124!";
+        addMember(email, password, username, true);
+
+        // when
+        loginService.updatePassword(email, newPassword, password);
+
+        // then
+        loginService.loginMember(email, newPassword);
+    }
+
+    @Test
+    @DisplayName("비밀번호 재설정 실패")
+    void 비밀번호재설정실패() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        String newPassword = "jsm1234!";
+        addMember(email, password, username, true);
+
+        // then
+        assertThatThrownBy(() -> loginService.updatePassword(email, newPassword, password + "123")).isInstanceOf(BadCredentialsException.class);
+        assertThatThrownBy(() -> loginService.updatePassword(email,"1234", password)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> loginService.updatePassword("123@asd.com", newPassword, password)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("Access token 재발급")
+    void 토큰재발급() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        addMember(email, password, username, true);
+
+        // when
+        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+
+        // then
+        TokenInfoDto tokenInfoDtoNew = loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
+        String blackListEmail = (String) blackListRepository.getBlackList(tokenInfoDto.getAccessToken());
+        // 블랙리스트 등록
+        assertThat(blackListEmail).isEqualTo(email);
+        // 새 토큰 발급
+        assertThat(tokenInfoDto.getTokenId()).isNotEqualTo(tokenInfoDtoNew.getTokenId());
+    }
+
+    @Test
+    @DisplayName("Access token 재발급 실패")
+    void 토큰재발급실패() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        addMember(email, password, username, true);
+
+        // when
+        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+        TokenInfoDto tokenInfoDto2 = loginService.loginMember(email, password);
+        // then
+        assertThatThrownBy(() -> loginService.refreshToken("", tokenInfoDto.getRefreshToken()))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), ""))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> loginService.refreshToken("", ""))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto2.getRefreshToken()))
+                .isInstanceOf(IllegalArgumentException.class); // 토큰 교차 검증
+    }
+
+    @Test
+    @DisplayName("계정 삭제")
+    void 계정삭제() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        addMember(email, password, username, true);
+
+        // when
+        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+        loginService.deleteMember(email, password, tokenInfoDto.getAccessToken());
+
+        // then
+        String blackListEmail = (String) blackListRepository.getBlackList(tokenInfoDto.getAccessToken());
+        assertThat(blackListEmail).isEqualTo(email); // 블랙리스트 등록
+        assertThat(memberRepository.findByEmail(email)).isNotPresent();
+        assertThat(refreshTokenRepository.findAllByOwnerEmail(email).size()).isEqualTo(0);
+    }
+
+    private void addMember(String email, String password, String username, boolean setEmailVerified) {
+        MemberCreateDto memberCreateDto = new MemberCreateDto(email, password, username);
+        loginService.createMember(memberCreateDto);
+
+        if(setEmailVerified) setEmailVerified(email);
+    }
+
+    private void setEmailVerified(String email) {
+        Member member = memberRepository.findByEmail(email).get();
+        member.updateEmailVerified(true);
     }
 }

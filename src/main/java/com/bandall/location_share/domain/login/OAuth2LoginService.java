@@ -2,7 +2,7 @@ package com.bandall.location_share.domain.login;
 
 import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
 import com.bandall.location_share.domain.exceptions.DbException;
-import com.bandall.location_share.domain.exceptions.EmailNotVerified;
+import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
 import com.bandall.location_share.domain.login.jwt.token.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
@@ -72,7 +72,7 @@ public class OAuth2LoginService {
 
         if (!member.isEmailVerified()) {
             verificationService.sendVerificationEmail(member.getEmail());
-            throw new EmailNotVerified("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.", email);
+            throw new EmailNotVerifiedException("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.", email);
         }
 
         TokenInfoDto tokenInfoDto = tokenProvider.createTokenWithMember(member);
