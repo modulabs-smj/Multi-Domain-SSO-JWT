@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -26,7 +27,8 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
-
+    private static final String BEARER_REGEX = "Bearer ([a-zA-Z0-9_=]+)\\.([a-zA-Z0-9_=]+)\\.([a-zA-Z0-9_\\-\\+\\/=]*)";
+    private static final Pattern BEARER_PATTERN = Pattern.compile(BEARER_REGEX);
     private final TokenProvider tokenProvider;
 
     @Override
@@ -34,7 +36,6 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         // jwt 토큰 예외 구분 처리를 위해 request에 tokenValidationResult를 담아 EntryPoint에 전달
-
         // Authorization 헤더가 없는 경우
         if(!StringUtils.hasText(token)) {
             log.info("No Authorization Header");
@@ -47,7 +48,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         TokenValidationResult tokenValidationResult = tokenProvider.validateToken(token);
 
-        // 잘못된 토큰일 경우 (잘못된 토큰, 블랙리스트, Refresh token을 넣은 경우)
+        // 잘못된 토큰일 경우 (잘못된 토큰, Refresh token을 넣은 경우)
         if (!tokenValidationResult.getResult() || tokenValidationResult.getTokenType() != TokenType.ACCESS) {
             request.setAttribute("result", tokenValidationResult);
             filterChain.doFilter(request,response);
@@ -59,6 +60,7 @@ public class JwtFilter extends OncePerRequestFilter {
             tokenValidationResult.setResult(false);
             tokenValidationResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
             tokenValidationResult.setException(new DiscardedJwtException("Token already discarded"));
+            request.setAttribute("result", tokenValidationResult);
             filterChain.doFilter(request, response);
             return;
         }
@@ -67,13 +69,13 @@ public class JwtFilter extends OncePerRequestFilter {
         Authentication authentication = tokenProvider.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         log.info("AUTH SUCCESS : {},", authentication.getName());
-        filterChain.doFilter(request,response);
+        filterChain.doFilter(request, response);
     }
 
     // Request Header에서 토큰 정보 추출
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
+        if (bearerToken != null && bearerToken.startsWith("Bearer ") && BEARER_PATTERN.matcher(bearerToken).matches()) {
             return bearerToken.substring(7);
         }
         return null;

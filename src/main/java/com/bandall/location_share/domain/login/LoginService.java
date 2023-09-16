@@ -45,7 +45,8 @@ public class LoginService {
     @Value("${verification.email.do-email-verification}")
     private boolean doEmailVerification;
 
-    private static final String PASSWORD_REGEX_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$";
+    private static final String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$";
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile(PASSWORD_REGEX);
 
     public Member createMember(MemberCreateDto memberCreateDto) {
         if(followingPasswordStrategy(memberCreateDto.getPassword())) {
@@ -100,7 +101,7 @@ public class LoginService {
 
     public TokenInfoDto refreshToken(String accessToken, String refreshToken) {
         TokenValidationResult validationResult = tokenProvider.isAccessTokenAndRefreshTokenValid(accessToken, refreshToken);
-        // 1. validateToken에 tokenId 값 추가해서 검사 -> 토큰 교차 방지 [굳이 필요한지는 모르겠음(허점이긴 하나 활용할 수 있는 공격기법이 없음)]
+        // 1. validateToken에 tokenId 값 추가해서 검사
         // 2. tokenId를 통해 blackList 없이 검증 가능 + db에 refresh 토큰 value를 저장하지 않아도 됨(tokenID만 저장)
         switch (validationResult.getTokenStatus()) {
             case TOKEN_EXPIRED -> throw new IllegalArgumentException("만료된 Refresh 토큰입니다.");
@@ -109,10 +110,10 @@ public class LoginService {
             case TOKEN_ID_NOT_MATCH -> throw new IllegalArgumentException("잘못된 토큰 쌍입니다.");
         }
 
-        RefreshToken refreshTokenDb = refreshTokenRepository.findRefreshTokenByValue(refreshToken).orElseThrow(() ->
+        RefreshToken refreshTokenInDb = refreshTokenRepository.findRefreshTokenByValue(refreshToken).orElseThrow(() ->
                 new IllegalArgumentException("존재하지 않는 Refresh 토큰입니다."));
 
-        String email = refreshTokenDb.getOwnerEmail();
+        String email = refreshTokenInDb.getOwnerEmail();
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> {
             log.error("계정이 존재하지 않음");
             return new IllegalArgumentException("계정이 존재하지 않습니다.");
@@ -127,7 +128,7 @@ public class LoginService {
                 .build();
 
         refreshTokenRepository.save(newRefreshToken);
-        refreshTokenRepository.delete(refreshTokenDb);
+        refreshTokenRepository.delete(refreshTokenInDb);
         blackListRepository.setBlackList(accessToken, email);
         return tokenInfoDto;
     }
@@ -212,6 +213,6 @@ public class LoginService {
 
     //패스워드 설정 정책
     private boolean followingPasswordStrategy(String password) {
-        return !Pattern.matches(PASSWORD_REGEX_PATTERN, password);
+        return !PASSWORD_PATTERN.matcher(password).matches();
     }
 }

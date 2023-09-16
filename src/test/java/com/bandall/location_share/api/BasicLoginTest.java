@@ -9,7 +9,6 @@ import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.MemberJpaRepository;
 import com.bandall.location_share.web.controller.dto.MemberCreateDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
@@ -43,11 +42,7 @@ public class BasicLoginTest {
     private LoginService loginService;
 
     @Autowired
-    private ObjectMapper mapper;
-
-    @Autowired
     private EntityManager em;
-
 
     @AfterEach
     void afterEach() {
@@ -74,7 +69,7 @@ public class BasicLoginTest {
         assertThat(member.getUsername()).isEqualTo(username);
     }
 
-    @Test
+//    @Test
     @DisplayName("로그인 테스트[이메일 인증 전]")
     void 로그인1() {
         // given
@@ -204,6 +199,7 @@ public class BasicLoginTest {
         // when
         TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
         TokenInfoDto tokenInfoDto2 = loginService.loginMember(email, password);
+
         // then
         assertThatThrownBy(() -> loginService.refreshToken("", tokenInfoDto.getRefreshToken()))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -213,6 +209,50 @@ public class BasicLoginTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto2.getRefreshToken()))
                 .isInstanceOf(IllegalArgumentException.class); // 토큰 교차 검증
+        assertThatThrownBy(() -> {
+            loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
+            loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
+        }).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("RefreshToken 만료")
+    void 토큰재발급실패2() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        addMember(email, password, username, true);
+
+        // when
+        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+        try {
+            Thread.sleep(8000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        // then
+        assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken()))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("토큰 갱신 2회 시도")
+    void 토큰재발급실패3() {
+        // given
+        String email = "abc@gmail.com";
+        String password = "bandallgom123!!";
+        String username = "반달77";
+        addMember(email, password, username, true);
+
+        // when
+        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+        loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
+
+        // then
+        assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken()))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

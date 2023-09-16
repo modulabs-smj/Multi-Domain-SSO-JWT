@@ -21,7 +21,7 @@ public class ApiResponseJson {
 
     public ApiResponseJson(HttpStatus httpStatus, Object data) {
         this.httpStatus = httpStatus;
-        this.code = Code.NO_ERROR;
+        this.code = TokenStatusCode.OK;
         this.data = data;
     }
 }

@@ -35,9 +35,9 @@ public class TokenProvider {
     protected final String secrete;
     protected final long accessTokenValidationInMilliseconds;
     protected final long refreshTokenValidationInMilliseconds;
-    protected Key hashKey;
+    protected final Key hashKey;
 
-    protected RedisAccessTokenBlackListRepository blackListRepository;
+    protected final RedisAccessTokenBlackListRepository blackListRepository;
 
     public TokenProvider(String secrete, long accessTokenValidationInSeconds, long refreshTokenValidationInMilliseconds, RedisAccessTokenBlackListRepository blackListRepository) {
         this.secrete = secrete;
@@ -142,20 +142,7 @@ public class TokenProvider {
         return new UsernamePasswordAuthenticationToken(principle, token, authorities);
     }
 
-//    // 이후에는 claim을 두 번 하지 않도록 새로운 dto를 만들어서 전달할 수 있게 수정
-//    // 최종적으로 이 함수 삭제
-//    public RefreshToken getRefreshTokenData(String token) {
-//        Claims claims = Jwts.parserBuilder()
-//                .setSigningKey(hashKey)
-//                .build()
-//                .parseClaimsJws(token)
-//                .getBody();
-//
-//        return new RefreshToken(claims.getSubject(), token, claims.getExpiration());
-//    }
-
     // 토큰 유효성 검사 -> access, refresh 토큰 둘 다 검증하는 함수이므로 access 토큰 블랙리스트는 체크하지 않는다.
-    // Redis 연관 코드 삭제
     public TokenValidationResult validateToken(String token) {
         TokenValidationResult validResult = new TokenValidationResult(false, TokenType.ACCESS, null,null, null);
         Claims claims = null;
@@ -189,7 +176,7 @@ public class TokenProvider {
         return validResult;
     }
 
-    // access 토큰과 refresh 토큰 검증, 차후에 TokenValidationResult에 tokenID를 넣어 검증하는 로직 추가 가능
+    // access 토큰과 refresh 토큰 검증
     public TokenValidationResult isAccessTokenAndRefreshTokenValid(String accessToken, String refreshToken) {
         TokenValidationResult refTokenRes = validateToken(refreshToken);
         TokenValidationResult aTokenRes = validateToken(accessToken);
