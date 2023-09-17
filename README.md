@@ -213,13 +213,6 @@
 
 - **URL:** `/api/email-verification?email=[email]`
 - **Method:** `GET`
-- **RequestBody:**
-
-  ```json
-  {
-    "email": "[email]"
-  }
-  ```
 
 - **Success Response:** (HTTP Status 200)
 
@@ -241,6 +234,44 @@
   {
     "email": "[email]",
     "code": "[verification_code]"
+  }
+  ```
+
+- **Success Response:** (HTTP Status 200)
+
+  ```json
+  {
+    "httpStatus": "OK",
+    "code": 200,
+    "data": "OK"
+  }
+  ```
+
+### 10. 비밀번호 재설정 이메일 코드 발급
+
+- **URL:** `/api/account/find-password?email=[email]`
+- **Method:** `GET`
+- **Success Response:** (HTTP Status 200)
+
+  ```json
+  {
+    "httpStatus": "OK",
+    "code": 200,
+    "data": "OK"
+  }
+  ```
+
+### 11. 비밀번호 재설정
+
+- **URL:** `/api/account/find-password`
+- **Method:** `POST`
+- **RequestBody:**
+
+  ```json
+  {
+    "email": "[email]",
+    "code": "[verification_code]",
+    "newPassword": "[new_password]"
   }
   ```
 

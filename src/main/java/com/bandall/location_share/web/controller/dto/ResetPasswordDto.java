@@ -10,9 +10,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class EmailVerifyDto {
+public class ResetPasswordDto {
     @Email
     String email;
     @NotEmpty
     String code;
+    @NotEmpty
+    String newPassword;
 }

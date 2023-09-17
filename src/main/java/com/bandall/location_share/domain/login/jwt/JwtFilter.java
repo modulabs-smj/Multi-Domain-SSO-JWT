@@ -38,7 +38,6 @@ public class JwtFilter extends OncePerRequestFilter {
         // jwt 토큰 예외 구분 처리를 위해 request에 tokenValidationResult를 담아 EntryPoint에 전달
         // Authorization 헤더가 없는 경우
         if(!StringUtils.hasText(token)) {
-            log.info("Wrong Authorization Header");
             request.setAttribute("result",
                     new TokenValidationResult(false, null, null, TokenStatus.WRONG_AUTH_HEADER, null)
             );

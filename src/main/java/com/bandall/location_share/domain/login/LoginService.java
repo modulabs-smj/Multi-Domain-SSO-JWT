@@ -151,7 +151,7 @@ public class LoginService {
         return member;
     }
 
-    public Member updatePassword(String email, String newPassword, String oldPassword) {
+    public void updatePassword(String email, String newPassword, String oldPassword) {
         if(!followingPasswordStrategy(newPassword)) {
             log.info("비밀번호 정책 미달");
             throw new IllegalArgumentException("새 비밀번호는 최소 8자리에 영어, 숫자, 특수문자를 포함해야 합니다.");
@@ -173,7 +173,6 @@ public class LoginService {
         }
 
         member.updatePassword(passwordEncoder.encode(newPassword));
-        return member;
     }
 
     public void deleteMember(String email, String password, String accessToken) {
@@ -195,10 +194,36 @@ public class LoginService {
 
     public void verifyEmail(String email, String code) {
         verificationService.verifyEmail(email, code);
+        Member member = memberRepository.findByEmail(email).orElseThrow(() ->
+                new IllegalStateException("현재 존재하지 않는 계정입니다."));
+        member.updateEmailVerified(true);
     }
 
     public void sendVerifyEmail(String email) {
+        boolean memberExist = memberRepository.existsByEmail(email);
+        if(!memberExist) {
+            throw new IllegalStateException("존재하지 않는 계정입니다.");
+        }
         verificationService.sendVerificationEmail(email);
+    }
+
+    public void changePasswordByEmail(String email, String code, String newPassword) {
+        if(!followingPasswordStrategy(newPassword)) {
+            log.info("비밀번호 정책 미달");
+            throw new IllegalArgumentException("새 비밀번호는 최소 8자리에 영어, 숫자, 특수문자를 포함해야 합니다.");
+        }
+
+        verificationService.verifyEmail(email, code);
+
+        Member member = memberRepository.findByEmail(email).orElseThrow(() ->
+                new IllegalStateException("현재 존재하지 않는 계정입니다."));
+
+        if(member.getLoginType() != LoginType.EMAIL_PW) {
+            log.info("소셜 로그인 유저의 잘못된 비밀번호 변경 요청");
+            throw new BadCredentialsException("소셜 로그인 서비스를 사용 중인 계정으로 비밀번호가 존재하지 않습니다.");
+        }
+
+        member.updatePassword(passwordEncoder.encode(newPassword));
     }
 
     public Map<String, String> getUserInfo(String email) {
