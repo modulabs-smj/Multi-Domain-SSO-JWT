@@ -49,7 +49,7 @@ public class LoginService {
     private static final Pattern PASSWORD_PATTERN = Pattern.compile(PASSWORD_REGEX);
 
     public Member createMember(MemberCreateDto memberCreateDto) {
-        if(followingPasswordStrategy(memberCreateDto.getPassword())) {
+        if(!followingPasswordStrategy(memberCreateDto.getPassword())) {
             log.info("비밀번호 정책 미달");
             throw new IllegalArgumentException("비밀번호는 최소 8자리에 영어, 숫자, 특수문자를 포함해야 합니다.");
         }
