@@ -30,7 +30,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             case TOKEN_IS_BLACKLIST -> sendError(response, "Access Token Discarded", TokenStatusCode.TOKEN_IS_BLACKLIST);
             case TOKEN_WRONG_SIGNATURE -> sendError(response, "Wrong Access Token", TokenStatusCode.TOKEN_WRONG_SIGNATURE);
             case TOKEN_HASH_NOT_SUPPORTED -> sendError(response, "Access Token Unsupported", TokenStatusCode.TOKEN_HASH_NOT_SUPPORTED);
-            case NO_AUTH_HEADER -> sendError(response, "No Authorization Header", TokenStatusCode.NO_AUTH_HEADER);
+            case WRONG_AUTH_HEADER -> sendError(response, "Wrong Authorization Header", TokenStatusCode.NO_AUTH_HEADER);
             case TOKEN_VALIDATION_TRY_FAILED -> {
                 log.error("Error while validating token", result.getException());
                 sendError(response, "Wrong Authentication", TokenStatusCode.TOKEN_VALIDATION_TRY_FAILED);

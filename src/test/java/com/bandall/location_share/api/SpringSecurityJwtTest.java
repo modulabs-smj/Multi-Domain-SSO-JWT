@@ -116,6 +116,24 @@ public class SpringSecurityJwtTest {
     }
 
     @Test
+    @DisplayName("잘못된 Auth 헤더")
+    void accessTokenTestFail3() throws JsonProcessingException {
+        // given
+        TokenInfoDto tokenInfoDto = getTokenInfoDto(email, password);
+        tokenInfoDto.setAccessToken(" " + tokenInfoDto.getAccessToken());
+
+        // when
+        HttpEntity<String> httpEntity = new HttpEntity<>("");
+        String url = makeUrl("/api/whoami");
+        ResponseEntity<ApiResponseJson> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, ApiResponseJson.class);
+
+        // then
+        log.info("{}", response.getBody());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody().getCode()).isEqualTo(TokenStatusCode.NO_AUTH_HEADER);
+    }
+
+    @Test
     @DisplayName("Access Token 시간 초과")
     void accessTokenTimeout() throws JsonProcessingException {
         // given

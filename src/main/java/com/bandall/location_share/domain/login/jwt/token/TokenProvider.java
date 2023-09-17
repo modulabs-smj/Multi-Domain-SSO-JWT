@@ -176,7 +176,7 @@ public class TokenProvider {
         return validResult;
     }
 
-    // access 토큰과 refresh 토큰 검증
+    // access 토큰과 refresh 토큰 검증 => 블랙리스트 검증 삭제
     public TokenValidationResult isAccessTokenAndRefreshTokenValid(String accessToken, String refreshToken) {
         TokenValidationResult refTokenRes = validateToken(refreshToken);
         TokenValidationResult aTokenRes = validateToken(accessToken);
@@ -200,14 +200,6 @@ public class TokenProvider {
             totalResult.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
             return totalResult;
         }
-
-//        // TokenId 쌍 검증으로 블랙리스트 확인 필요X => 블랙리스트 등록 시 같은 쌍인 Refresh 토큰 삭제
-//        if(isAccessTokenBlackList(accessToken)) {
-//            log.info("Discarded Token");
-//            totalResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
-//            return totalResult;
-//        }
-//        log.info("{} {}", refTokenRes.getTokenId(), aTokenRes.getTokenId());
 
         // tokenId 쌍 검증
         if(!refTokenRes.getTokenId().equals(aTokenRes.getTokenId())) {
