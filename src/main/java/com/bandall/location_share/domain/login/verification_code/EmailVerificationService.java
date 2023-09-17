@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
@@ -32,8 +33,7 @@ public class EmailVerificationService {
 
     public void sendVerificationEmail(String email) {
         String code = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        long currentTime = (new Date()).getTime();
-        Date accessTokenExpireTime = new Date(currentTime + verificationCodeExpireTime * 1000);
+        LocalDateTime accessTokenExpireTime = LocalDateTime.now().plusSeconds(verificationCodeExpireTime);
 
         VerificationCode verificationCode = VerificationCode.builder()
                 .email(email)
@@ -43,7 +43,6 @@ public class EmailVerificationService {
 
         log.info("이메일 인증 요청 전송 email:{}, code:{}", email, code);
         verificationCodeRepository.deleteByEmail(email);
-        verificationCodeRepository.flush();
         verificationCodeRepository.save(verificationCode);
 
         HashMap<String, String> map = new HashMap<>();
@@ -67,7 +66,7 @@ public class EmailVerificationService {
             throw new IllegalStateException("잘못된 인증 코드입니다.");
         }
 
-        if((new Date()).compareTo(verificationCode.getExpireTime()) != -1) {
+        if(LocalDateTime.now().isAfter(verificationCode.getExpireTime())) {
             log.info("이메일 인증 코드 인증 시간 만료");
             throw new IllegalStateException("인증 시간이 만료 되었습니다.");
         }
@@ -77,7 +76,6 @@ public class EmailVerificationService {
         member.updateEmailVerified(true);
 
         verificationCodeRepository.deleteByEmail(email);
-        verificationCodeRepository.flush();
         log.info("이메일 인증 성공");
     }
 }

@@ -152,7 +152,7 @@ public class LoginService {
     }
 
     public Member updatePassword(String email, String newPassword, String oldPassword) {
-        if(followingPasswordStrategy(newPassword)) {
+        if(!followingPasswordStrategy(newPassword)) {
             log.info("비밀번호 정책 미달");
             throw new IllegalArgumentException("새 비밀번호는 최소 8자리에 영어, 숫자, 특수문자를 포함해야 합니다.");
         }
@@ -211,8 +211,7 @@ public class LoginService {
         return map;
     }
 
-    //패스워드 설정 정책
     private boolean followingPasswordStrategy(String password) {
-        return !PASSWORD_PATTERN.matcher(password).matches();
+        return PASSWORD_PATTERN.matcher(password).matches();
     }
 }

@@ -37,7 +37,7 @@ public class Member extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    private LocalDateTime lastAccessedTime;
+    private LocalDateTime lastLoginTime;
 
     public Member updatePassword(String password) {
         this.password = password;
@@ -56,6 +56,10 @@ public class Member extends BaseTimeEntity {
 
     public void updateEmailVerified(boolean EmailVerified) {
         this.isEmailVerified = EmailVerified;
+    }
+
+    public void updateLastLoginTime() {
+        this.lastLoginTime = LocalDateTime.now();
     }
 
     @Builder

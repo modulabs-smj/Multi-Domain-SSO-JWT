@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -23,10 +24,10 @@ public class VerificationCode extends BaseTimeEntity {
     @Column(length = 40)
     private String verificationCode;
 
-    Date expireTime;
+    LocalDateTime expireTime;
 
     @Builder
-    public VerificationCode(String email, String verificationCode, Date expireTime) {
+    public VerificationCode(String email, String verificationCode, LocalDateTime expireTime) {
         this.email = email;
         this.verificationCode = verificationCode;
         this.expireTime = expireTime;
