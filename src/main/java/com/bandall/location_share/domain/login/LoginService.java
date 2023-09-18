@@ -188,23 +188,8 @@ public class LoginService {
 
         refreshTokenRepository.deleteAllRefreshTokenByEmail(email);
         memberRepository.deleteById(foundMember.getId());
-        memberRepository.flush();
+//        memberRepository.flush();
         blackListRepository.setBlackList(accessToken, email);
-    }
-
-    public void verifyEmail(String email, String code) {
-        verificationService.verifyEmail(email, code);
-        Member member = memberRepository.findByEmail(email).orElseThrow(() ->
-                new IllegalStateException("현재 존재하지 않는 계정입니다."));
-        member.updateEmailVerified(true);
-    }
-
-    public void sendVerifyEmail(String email) {
-        boolean memberExist = memberRepository.existsByEmail(email);
-        if(!memberExist) {
-            throw new IllegalStateException("존재하지 않는 계정입니다.");
-        }
-        verificationService.sendVerificationEmail(email);
     }
 
     public void changePasswordByEmail(String email, String code, String newPassword) {

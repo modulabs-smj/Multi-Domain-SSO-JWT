@@ -1,5 +1,6 @@
 package com.bandall.location_share.domain.member;
 
+import com.bandall.location_share.domain.login.verification_code.VerificationCode;
 import com.bandall.location_share.domain.member.enums.Role;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import jakarta.persistence.*;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 public class Member extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "member_id")
     private Long id;
 
     @Enumerated(EnumType.STRING)
@@ -22,6 +24,9 @@ public class Member extends BaseTimeEntity {
 
     @Column(unique = true, length = 50)
     private String email;
+
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY)
+    private VerificationCode verificationCode;
 
     private boolean isEmailVerified;
 
@@ -52,6 +57,10 @@ public class Member extends BaseTimeEntity {
     public Member updateProfileImageUri(String profileImageUri) {
         this.profileImageUri = profileImageUri;
         return this;
+    }
+
+    public void updateVerificationCode(VerificationCode verificationCode) {
+        this.verificationCode = verificationCode;
     }
 
     public void updateEmailVerified(boolean EmailVerified) {

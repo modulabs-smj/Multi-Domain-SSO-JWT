@@ -46,9 +46,9 @@ public class BasicLoginTest {
 
     @AfterEach
     void afterEach() {
-        em.createNativeQuery("truncate table member").executeUpdate();
-        em.createNativeQuery("truncate table refresh_token").executeUpdate();
-        em.createNativeQuery("truncate table verification_code").executeUpdate();
+        em.createNativeQuery("delete from verification_code").executeUpdate();
+        em.createNativeQuery("delete from refresh_token").executeUpdate();
+        em.createNativeQuery("delete from member").executeUpdate();
     }
 
     @Test

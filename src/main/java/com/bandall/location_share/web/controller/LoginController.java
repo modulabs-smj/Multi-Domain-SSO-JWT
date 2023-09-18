@@ -2,6 +2,7 @@ package com.bandall.location_share.web.controller;
 
 import com.bandall.location_share.domain.login.LoginService;
 import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.verification_code.EmailVerificationService;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.web.controller.dto.*;
@@ -23,6 +24,7 @@ import java.util.Map;
 public class LoginController {
 
     private final LoginService loginService;
+    private final EmailVerificationService verificationService;
 
     @PostMapping("/api/account/create")
     public ApiResponseJson createAccount(@Valid @RequestBody MemberCreateDto memberCreateDto, BindingResult bindingResult) {
@@ -114,11 +116,11 @@ public class LoginController {
     }
 
     @GetMapping("/api/account/find-password")
-    public ApiResponseJson findPassword(@RequestParam(required = false) String email) {
+    public ApiResponseJson getPasswordResetCode(@RequestParam(required = false) String email) {
         if(!StringUtils.hasText(email)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
-        loginService.sendVerifyEmail(email);
+        verificationService.sendVerificationEmail(email);
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
 
@@ -149,14 +151,14 @@ public class LoginController {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
 
-        loginService.sendVerifyEmail(email);
+        verificationService.sendVerificationEmail(email);
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
 
     // binding result가 없을 경우 MethodArgumentNotValidException를 advice에서 처리
     @PostMapping("/api/email-verification")
     public ApiResponseJson verifyEmail(@Valid @RequestBody EmailVerifyDto emailVerifyDto) {
-        loginService.verifyEmail(emailVerifyDto.getEmail(), emailVerifyDto.getCode());
+        verificationService.verifyEmail(emailVerifyDto.getEmail(), emailVerifyDto.getCode());
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
 }

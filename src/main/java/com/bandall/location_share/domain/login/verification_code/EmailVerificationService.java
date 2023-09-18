@@ -1,6 +1,8 @@
 package com.bandall.location_share.domain.login.verification_code;
 
 import com.bandall.location_share.domain.login.verification_code.mail.MailService;
+import com.bandall.location_share.domain.member.Member;
+import com.bandall.location_share.domain.member.MemberJpaRepository;
 import com.bandall.location_share.web.filter.LogFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,20 +27,29 @@ public class EmailVerificationService {
 
     private final MailService mailService;
     private final VerificationCodeRepository verificationCodeRepository;
+    private final MemberJpaRepository memberRepository;
 
     public void sendVerificationEmail(String email) {
+        Member member = memberRepository.findByEmailJoinVerifyCode(email).orElseThrow(() -> {
+            throw new IllegalStateException("현재 존재하지 않는 계정입니다.");
+        });
+        log.info("{}", member);
         String code = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         LocalDateTime accessTokenExpireTime = LocalDateTime.now().plusSeconds(verificationCodeExpireTime);
 
         VerificationCode verificationCode = VerificationCode.builder()
-                .email(email)
+                .member(member)
                 .verificationCode(code)
                 .expireTime(accessTokenExpireTime)
                 .build();
 
         log.info("이메일 인증 요청 전송 <EMAIL:{}, CODE:{}>", email, code);
-        verificationCodeRepository.deleteByEmail(email);
-        verificationCodeRepository.save(verificationCode);
+        if(member.getVerificationCode() != null) {
+            verificationCodeRepository.delete(member.getVerificationCode());
+            verificationCodeRepository.flush();
+        }
+        VerificationCode savedCode = verificationCodeRepository.save(verificationCode);
+        member.updateVerificationCode(savedCode); // orphanRemoval 적용할지?
 
         HashMap<String, String> map = new HashMap<>();
         map.put("verificationCode", code);
@@ -50,23 +61,28 @@ public class EmailVerificationService {
 
     public void verifyEmail(String email, String code) {
         log.info("이메일 인증 시도 <EMAIL:{}, CODE:{}>", email, code);
-
-        VerificationCode verificationCode = verificationCodeRepository.findByEmail(email).orElseThrow(() -> {
-            log.info("존재하지 않는 인증코드 <EMAIL:{}>", email);
-            return new IllegalStateException("잘못된 인증 정보입니다.");
+        Member member = memberRepository.findByEmailJoinVerifyCode(email).orElseThrow(() -> {
+            throw new IllegalStateException("현재 존재하지 않는 계정입니다.");
         });
 
-        if(!verificationCode.getVerificationCode().equals(code)) {
-            log.info("잘못된 인증 코드 {}:{}", verificationCode.getVerificationCode(), code);
+        if(member.getVerificationCode().getCode() == null) {
+            log.info("존재하지 않는 인증코드 <EMAIL:{}>", email);
             throw new IllegalStateException("잘못된 인증 정보입니다.");
         }
 
-        if(LocalDateTime.now().isAfter(verificationCode.getExpireTime())) {
+        if(!member.getVerificationCode().getCode().equals(code)) {
+            log.info("잘못된 인증 코드 <{}:{}>", member.getVerificationCode().getCode(), code);
+            throw new IllegalStateException("잘못된 인증 정보입니다.");
+        }
+
+        if(LocalDateTime.now().isAfter(member.getVerificationCode().getExpireTime())) {
             log.info("이메일 인증 코드 인증 시간 만료");
             throw new IllegalStateException("인증 시간이 만료 되었습니다.");
         }
 
-        verificationCodeRepository.deleteByEmail(email);
+        verificationCodeRepository.delete(member.getVerificationCode());
+        member.updateVerificationCode(null);
+        member.updateEmailVerified(true);
         log.info("이메일 인증 성공");
     }
 }
