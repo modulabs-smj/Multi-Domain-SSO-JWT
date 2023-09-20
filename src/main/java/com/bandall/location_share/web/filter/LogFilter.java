@@ -26,8 +26,9 @@ import java.util.logging.Filter;
 @Order(SecurityProperties.DEFAULT_FILTER_ORDER - 2)
 public class LogFilter extends OncePerRequestFilter {
     public static final String TRACE_ID = "traceId";
-    public static final String[] noFilterUrl = {"/error"};
+    public static final String[] noFilterUrl = {"/error", "/favicon.ico"};
 
+    // -Djava.net.preferIPv4Stack=true
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String requestURI = request.getRequestURI();
@@ -41,7 +42,7 @@ public class LogFilter extends OncePerRequestFilter {
 
         MDC.put(TRACE_ID, uuid);
         long startTime = System.currentTimeMillis();
-        log.info("[REQUEST URI : {}, METHOD : {}]", requestURI, request.getMethod());
+        log.info("[REQUEST URI : {}, METHOD : {}, IP : {}]", requestURI, request.getMethod(), request.getRemoteAddr());
 
         filterChain.doFilter(request, response);
         long totalTime = System.currentTimeMillis() - startTime;

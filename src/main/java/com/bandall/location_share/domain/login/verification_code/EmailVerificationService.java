@@ -65,8 +65,8 @@ public class EmailVerificationService {
             throw new IllegalStateException("현재 존재하지 않는 계정입니다.");
         });
 
-        if(member.getVerificationCode().getCode() == null) {
-            log.info("존재하지 않는 인증코드 <EMAIL:{}>", email);
+        if(member.getVerificationCode() == null) {
+            log.info("존재하지 않는 인증 코드 <EMAIL:{}>", email);
             throw new IllegalStateException("잘못된 인증 정보입니다.");
         }
 

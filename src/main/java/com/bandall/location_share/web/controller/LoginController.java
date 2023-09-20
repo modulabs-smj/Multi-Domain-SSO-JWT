@@ -45,26 +45,26 @@ public class LoginController {
 
     @PostMapping("/api/account/auth")
     public ApiResponseJson authAccount(@Valid @RequestBody MemberLoginDto memberLoginDto, BindingResult bindingResult) {
-        log.info("Authenticating Account=>{}", memberLoginDto.getEmail());
+        log.info("Authenticating Account : <{}>", memberLoginDto.getEmail());
         if(bindingResult.hasErrors()) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
 
         TokenInfoDto tokenInfoDto = loginService.loginMember(memberLoginDto.getEmail(), memberLoginDto.getPassword());
 
-        log.info("Issued Token Info=>{}", tokenInfoDto);
+        log.info("Issued TokenId : <{}>", tokenInfoDto.getTokenId());
         return new ApiResponseJson(HttpStatus.OK, tokenInfoDto);
     }
 
     @PostMapping("/api/account/refresh")
     public ApiResponseJson refreshToken(@Valid @RequestBody TokenInfoDto tokenInfoDto, BindingResult bindingResult) {
-        log.info("Refreshing Token={}", tokenInfoDto);
+        log.info("Refreshing Token : <{}>", tokenInfoDto);
         if(bindingResult.hasErrors()) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
 
         TokenInfoDto newTokenInfo = loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
-        log.info("Refreshed Token Info=>{}", newTokenInfo);
+        log.info("Refreshed TokenId : <{}>", newTokenInfo.getTokenId());
         return new ApiResponseJson(HttpStatus.OK, newTokenInfo);
     }
 
@@ -73,7 +73,7 @@ public class LoginController {
                                   @AuthenticationPrincipal UserPrinciple user
     ) {
         String refreshToken = json.get("refreshToken");
-        log.info("Logout request refreshToken={}", refreshToken);
+//        log.info("Logout request refreshToken={}", refreshToken);
         if(!StringUtils.hasText(refreshToken)) {
             throw new IllegalArgumentException("잘못된 요청입니다.");
         }
