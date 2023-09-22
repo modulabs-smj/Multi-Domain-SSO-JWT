@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.util.Date;
 
 @Slf4j
 @Service
@@ -20,6 +21,6 @@ public class RefreshTokenRepositoryScheduler {
     @Scheduled(fixedDelay = 3600000)
     public void deleteExpired() {
         log.info("[Scheduler] [{}] Deleting expired refresh tokens ", new Timestamp(System.currentTimeMillis()));
-        repository.deleteExpiredTokens();
+        repository.deleteExpiredTokens(new Date());
     }
 }

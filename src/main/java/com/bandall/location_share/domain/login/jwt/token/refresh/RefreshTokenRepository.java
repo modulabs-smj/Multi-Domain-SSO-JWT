@@ -20,8 +20,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     List<RefreshToken> findRefreshTokensByExpireTimeBefore(@Param("now") Date expireTime);
 
     @Modifying(clearAutomatically = true)
-    @Query("delete from RefreshToken r where r.expireTime < now()")
-    void deleteExpiredTokens();
+    @Query("delete from RefreshToken r where r.expireTime < :expireTime")
+    void deleteExpiredTokens(@Param("expireTime") Date expireTime);
 
     void deleteRefreshTokenByValue(String value);
 

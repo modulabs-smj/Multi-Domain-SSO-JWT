@@ -40,9 +40,12 @@ public class LogFilter extends OncePerRequestFilter {
             return;
         }
 
+        String ip = request.getHeader("X-FORWARDED-FOR");
+        if (ip == null) ip = request.getRemoteAddr();
+
         MDC.put(TRACE_ID, uuid);
         long startTime = System.currentTimeMillis();
-        log.info("[REQUEST URI : {}, METHOD : {}, IP : {}]", requestURI, request.getMethod(), request.getRemoteAddr());
+        log.info("[REQUEST URI : {}, METHOD : {}, IP : {}]", requestURI, request.getMethod(), ip);
 
         filterChain.doFilter(request, response);
         long totalTime = System.currentTimeMillis() - startTime;
