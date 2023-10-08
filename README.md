@@ -1,3 +1,44 @@
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=250&color=80ea6e&fontColor=363636&text=%EC%8A%A4%ED%94%84%EB%A7%81%20JWT%20%EB%A1%9C%EA%B7%B8%EC%9D%B8%20%EC%84%9C%EB%B2%84" alt="header"/>
+</div>
+
+<div align="center">
+    JWT Access, Refresh 토큰을 이용한 로그인 서버
+</div>
+
+## 🛠️ 기술 스택 🛠️
+
+<div align="center">
+    <img src="https://img.shields.io/badge/spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white">
+    <img src="https://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
+    <img src="https://img.shields.io/badge/springsecurity-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white">
+    <br>
+    <img src="https://img.shields.io/badge/redis-DC382D?style=for-the-badge&logo=redis&logoColor=white">
+    <img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
+    <img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+    <img src="https://img.shields.io/badge/thymeleaf-005F0F?style=for-the-badge&logo=thymeleaf&logoColor=white">
+
+</div>
+
+<br>
+
+## 🧰 개발 도구 🧰
+
+<div align="center">
+    <img src="https://img.shields.io/badge/intellijidea-000000?style=for-the-badge&logo=intellijidea&logoColor=white">
+    <img src="https://img.shields.io/badge/postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white">
+    <img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">    
+    <img src="https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white">
+</div>
+
+## 📆 구현 예정 기능 📆
+1. 네이버, 구글 OAuth 추가
+2. 유저가 복수의 권한(Role)을 가질 수 있도록 수정
+3. 관리자 기능 추가
+4. 액추에이터 추가
+
+<br>
+
 # API 명세서
 
 1. [LoginController](#logincontroller)
