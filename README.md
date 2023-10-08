@@ -1,4 +1,4 @@
-# 목차
+# API 명세서
 
 1. [LoginController](#logincontroller)
   - [1.1. 계정 생성](#1-계정-생성)
@@ -37,7 +37,7 @@
     "httpStatus": "OK",
     "code": 200,
     "data": {
-        "loginType": "NONE",
+        "loginType": "EMAIL_PW",
         "username": "[username]",
         "email": "[email]"
     }
@@ -52,7 +52,7 @@
 
   ```json
   {
-    "loginType": "NONE",
+    "loginType": "EMAIL_PW",
     "email": "[email]",
     "password": "[password]"
   }
@@ -291,16 +291,6 @@
 
 - **URL:** `/oauth/login/kakao?code=[kakao_access_token]`
 - **Method:** `GET`
-- **RequestBody:**
-
-  ```json
-  {
-    "loginType": "NONE",
-    "email": "[email]",
-    "password": "[password]"
-  }
-  ```
-
 - **Success Response:** (HTTP Status 200)
 
   ```json
