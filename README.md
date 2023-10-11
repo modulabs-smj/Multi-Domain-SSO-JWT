@@ -41,19 +41,75 @@
 
 # API 명세서
 
-1. [LoginController](#logincontroller)
-  - [1.1. 계정 생성](#1-계정-생성)
-  - [1.2. Email, Password 로그인](#2-email-password-로그인)
-  - [1.3. Access 토큰 재발급](#3-access-토큰-재발급)
-  - [1.4. 로그아웃](#4-로그아웃)
-  - [1.5. 유저 이름 변경](#5-유저-이름-변경)
-  - [1.6. 비밀번호 변경](#6-비밀번호-변경)
-  - [1.7. 계정 삭제](#7-계정-삭제)
-  - [1.8. 이메일 인증 코드 발급](#8-이메일-인증-코드-발급)
-  - [1.9. 이메일 인증 코드 제출](#9-이메일-인증-코드-제출)
-2. [OAuthController](#oauthcontorller)
-  - [2.1. 소셜 로그인](#1-소셜-로그인)
-  - [2.2. 계정 삭제](#2-계정-삭제)
+1. [JWT 토큰](#JWT-토큰)
+  - [1.1 Access Token](#access-token)
+  - [1.2 Refresh Token](#refresh-token)
+2. [LoginController](#logincontroller)
+  - [2.1. 계정 생성](#1-계정-생성)
+  - [2.2. Email, Password 로그인](#2-email-password-로그인)
+  - [2.3. Access 토큰 재발급](#3-access-토큰-재발급)
+  - [2.4. 로그아웃](#4-로그아웃)
+  - [2.5. 유저 이름 변경](#5-유저-이름-변경)
+  - [2.6. 비밀번호 변경](#6-비밀번호-변경)
+  - [2.7. 계정 삭제](#7-계정-삭제)
+  - [2.8. 이메일 인증 코드 발급](#8-이메일-인증-코드-발급)
+  - [2.9. 이메일 인증 코드 제출](#9-이메일-인증-코드-제출)
+3. [OAuthController](#oauthcontroller)
+  - [3.1. 소셜 로그인](#1-소셜-로그인)
+  - [3.2. 계정 삭제](#2-계정-삭제)
+4. [Response Status Code](#response-status-code)
+  - [응답 JSON 형식](#응답-json-형식)
+  - [코드 정보](#코드-정보)
+
+# JWT 토큰
+## 기본 구조
+### Access Token
+**Header**
+```json
+{
+  "alg": "HS512"
+}
+```
+**PAYLOAD**
+```json
+{
+  "sub": "[email]",
+  "auth": "[role]",
+  "username": "[username]",
+  "tokenId": "[token Id]",
+  "exp": token_expire_time
+}
+```
+**VERIFY SIGNATURE**
+```
+HMACSHA512(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  secret key
+)
+```
+
+### Refresh Token
+**Header**
+```json
+{
+  "alg": "HS512"
+}
+```
+**PAYLOAD**
+```json
+{
+  "exp": token_expire_time,
+  "sub": "[email]",
+  "tokenId": "[token Id]"
+}
+```
+**VERIFY SIGNATURE**
+```
+HMACSHA512(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  secret key
+)
+```
 
 # LoginController
 ## Endpoints
@@ -98,7 +154,7 @@
     "password": "[password]"
   }
   ```
-
+ 
 - **Success Response:** (HTTP Status 200)
 
   ```json
@@ -115,6 +171,8 @@
     }
   }
   ```
+**참고**  
+이메일 인증을 완료하지 않았을 경우 이메일 인증 오류가 발생합니다.
 
 ### 3. Access 토큰 재발급
 
@@ -145,6 +203,9 @@
     }
   }
   ```
+  
+**참고**  
+Token ID가 같은 토큰 쌍만 재발급이 가능합니다.
 
 ### 4. 로그아웃
 
@@ -326,7 +387,7 @@
   }
   ```
 
-# OAuthContorller
+# OAuthController
 ## Endpoints
 ### 1. 소셜 로그인
 
@@ -372,3 +433,46 @@
     "data": "OK"
   }
   ```
+
+# Response Status Code
+## 응답 JSON 형식
+### 성공 응답
+```json
+{
+  "httpStatus": "[http status code]",
+  "code": 200,
+  "data": "{ data_json }"
+}
+```
+
+### 오류 응답
+```json
+{
+  "httpStatus": "[http error status code]",
+  "code": error_code,
+  "data": "[error msg]"
+}
+```
+
+## 코드 정보
+### 일반 상태 코드
+| Code  | Name                 | Description         |
+|-------|----------------------|---------------------|
+| `200` | `OK`                 | 요청이 성공적으로 처리되었습니다.  |
+| `404` | `URL_NOT_FOUND`      | 요청한 URL을 찾을 수 없습니다. |
+| `410` | `EMAIL_NOT_VERIFIED` | 이메일 인증이 완료되지 않았습니다. |
+| `420` | `WRONG_PARAMETER`    | 잘못된 파라미터가 입력되었습니다.  |
+| `430` | `LOGIN_FAILED`       | 로그인에 실패하였습니다.       |
+| `500` | `SERVER_ERROR`       | 서버 내부 오류가 발생하였습니다.  |
+
+
+### 토큰 상태 코드
+
+| Code   | Name                          | Description                   |
+|--------|-------------------------------|-------------------------------|
+| `4011` | `TOKEN_EXPIRED`               | 토큰이 만료되었습니다.                  |
+| `4012` | `TOKEN_IS_BLACKLIST`          | 토큰이 로그아웃 되어 블랙리스트에 등록되어 있습니다. |
+| `4013` | `TOKEN_WRONG_SIGNATURE`       | 토큰의 서명이 잘못되었습니다.              |
+| `4014` | `TOKEN_HASH_NOT_SUPPORTED`    | 지원하지 않는 해시 알고리즘이 사용된 토큰입니다.   |
+| `4015` | `NO_AUTH_HEADER`              | Authentication 헤더가 없습니다.      |
+| `4016` | `TOKEN_VALIDATION_TRY_FAILED` | 토큰 검증 시도가 실패했습니다.             |
