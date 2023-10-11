@@ -65,13 +65,13 @@
 ## 기본 구조
 ### Access Token
 **Header**
-```json
+```
 {
   "alg": "HS512"
 }
 ```
 **PAYLOAD**
-```json
+```
 {
   "sub": "[email]",
   "auth": "[role]",
@@ -437,7 +437,7 @@ Token ID가 같은 토큰 쌍만 재발급이 가능합니다.
 # Response Status Code
 ## 응답 JSON 형식
 ### 성공 응답
-```json
+```
 {
   "httpStatus": "[http status code]",
   "code": 200,
@@ -446,7 +446,7 @@ Token ID가 같은 토큰 쌍만 재발급이 가능합니다.
 ```
 
 ### 오류 응답
-```json
+```
 {
   "httpStatus": "[http error status code]",
   "code": error_code,
