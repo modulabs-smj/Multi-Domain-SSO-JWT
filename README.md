@@ -39,6 +39,11 @@
 
 <br>
 
+<p align="center">
+  <a href="https://github.com/bandall/location_share_flutter"><strong>🔗 로그인 테스트용 Flutter 코드 🔗</strong></a>
+</p>
+
+
 # API 명세서
 
 1. [JWT 토큰](#JWT-토큰)
