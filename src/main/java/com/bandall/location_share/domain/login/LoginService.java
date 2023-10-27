@@ -212,7 +212,10 @@ public class LoginService {
     }
 
     public Map<String, String> getUserInfo(String email) {
-        Member member = memberRepository.findByEmail(email).orElseThrow(RuntimeException::new);
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> {
+            log.error("존재하지 않는 계정");
+            return new IllegalArgumentException("이미 삭제되거나 존재하지 않는 계정입니다.");
+        });
 
         HashMap<String, String> map = new HashMap<>();
         map.put("username", member.getUsername());
