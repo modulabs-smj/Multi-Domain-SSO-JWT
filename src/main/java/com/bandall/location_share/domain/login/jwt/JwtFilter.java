@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 public class JwtFilter extends OncePerRequestFilter {
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_REGEX = "Bearer ([a-zA-Z0-9_=]+)\\.([a-zA-Z0-9_=]+)\\.([a-zA-Z0-9_\\-\\+\\/=]*)";
+    private static final String BEARER_REGEX = "Bearer ([a-zA-Z0-9_\\-\\+\\/=]+)\\.([a-zA-Z0-9_\\-\\+\\/=]+)\\.([a-zA-Z0-9_\\-\\+\\/=]*)";
     private static final Pattern BEARER_PATTERN = Pattern.compile(BEARER_REGEX);
     private final TokenProvider tokenProvider;
 
