@@ -20,6 +20,10 @@ public enum TokenStatus {
     }
 
     public String getMessageEn(TokenType tokenType) {
+        if (tokenType == null) {
+            return String.format(messageEn, "Token");
+        }
+
         if (tokenType == TokenType.ACCESS) {
             return String.format(messageEn, "Access Token");
         }
@@ -28,6 +32,10 @@ public enum TokenStatus {
     }
 
     public String getMessageKr(TokenType tokenType) {
+        if (tokenType == null) {
+            return String.format(messageKr, "Token");
+        }
+
         if (tokenType == TokenType.ACCESS) {
             return String.format(messageKr, "Access Token");
         }
