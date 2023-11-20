@@ -101,72 +101,85 @@ public class TokenProvider {
 
     // 토큰 유효성 검사 -> access, refresh 토큰 둘 다 검증하는 함수이므로 access 토큰 블랙리스트는 체크하지 않는다.
     public TokenValidationResult validateToken(String token) {
-        TokenValidationResult validResult = new TokenValidationResult(false, TokenType.ACCESS, null, null, null);
-        Claims claims = null;
         try {
-            claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
-
-            // 토큰에 권한정보가 없을 경우 Refresh 토큰
-            if (claims.get(KEY_AUTHORITIES) == null) validResult.setTokenType(TokenType.REFRESH);
-
-            validResult.setResult(true);
-            validResult.setTokenId(claims.get(KEY_TOKEN_ID, String.class));
-            validResult.setTokenStatus(TokenStatus.TOKEN_VALID);
-            return validResult;
+            Claims claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
+            TokenType tokenType = claims.get(KEY_AUTHORITIES) == null ? TokenType.REFRESH : TokenType.ACCESS;
+            return new TokenValidationResult(true, tokenType, claims.get(KEY_TOKEN_ID, String.class), claims.getSubject(), TokenStatus.TOKEN_VALID, null);
         } catch (ExpiredJwtException e) {
-            // 만료된 토큰의 경우에도 tokenId를 부여할 수 있게 수정
             log.info("만료된 jwt 토큰");
-            claims = e.getClaims();
-            validResult.setTokenStatus(TokenStatus.TOKEN_EXPIRED);
-            validResult.setTokenId(claims.get(KEY_TOKEN_ID, String.class));
+            return getExpiredTokenValidationResult(e);
         } catch (SecurityException | MalformedJwtException e) {
             log.info("잘못된 jwt 서명");
-            validResult.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
+            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE, null);
         } catch (UnsupportedJwtException e) {
             log.info("지원되지 않는 jwt 서명");
-            validResult.setTokenStatus(TokenStatus.TOKEN_HASH_NOT_SUPPORTED);
+            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_HASH_NOT_SUPPORTED, null);
         } catch (IllegalArgumentException e) {
             log.info("잘못된 jwt 토큰");
-            validResult.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
+            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE, null);
         }
-
-        return validResult;
     }
 
-    // access 토큰과 refresh 토큰 검증 => 블랙리스트 검증 삭제
-    public TokenValidationResult isAccessTokenAndRefreshTokenValid(String accessToken, String refreshToken) {
+    private TokenValidationResult getExpiredTokenValidationResult(ExpiredJwtException e) {
+        log.info("만료된 jwt 토큰");
+        Claims claims = e.getClaims();
+        return new TokenValidationResult(false, TokenType.ACCESS, claims.get(KEY_TOKEN_ID, String.class), null, TokenStatus.TOKEN_EXPIRED, null);
+    }
+
+    public TokenValidationResult isAccessAndRefreshTokenValid(String accessToken, String refreshToken) {
         TokenValidationResult refTokenRes = validateToken(refreshToken);
         TokenValidationResult aTokenRes = validateToken(accessToken);
-        TokenValidationResult totalResult = new TokenValidationResult(true, null, null, TokenStatus.TOKEN_VALID, null);
 
+        if (!isRefreshTokenValid(refTokenRes)) {
+            return refTokenRes;
+        }
+
+        if (!isAccessTokenValid(aTokenRes)) {
+            return aTokenRes;
+        }
+
+        if (!isTokenPairValid(refTokenRes, aTokenRes)) {
+            return new TokenValidationResult(false, null, null, refTokenRes.getEmail(), TokenStatus.TOKEN_ID_NOT_MATCH, null);
+        }
+
+        return new TokenValidationResult(true, null, refTokenRes.getTokenId(), refTokenRes.getEmail(), TokenStatus.TOKEN_VALID, null);
+    }
+
+    private boolean isRefreshTokenValid(TokenValidationResult refTokenRes) {
         if (refTokenRes.getTokenStatus() == TokenStatus.TOKEN_EXPIRED) {
             log.info("Expired Refresh Token");
-            totalResult.setTokenStatus(TokenStatus.TOKEN_EXPIRED);
-            return totalResult;
+            refTokenRes.setTokenStatus(TokenStatus.TOKEN_EXPIRED);
+            return false;
         }
 
         if (!refTokenRes.getResult()) {
             log.info("Wrong Refresh Token");
-            totalResult.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
-            return totalResult;
+            refTokenRes.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
+            return false;
         }
 
+        return true;
+    }
+
+    private boolean isAccessTokenValid(TokenValidationResult aTokenRes) {
         // 잘못된 access 토큰일 경우에만 => 재발급 할꺼라 만료된 것도 OK
         if (!aTokenRes.getResult() && aTokenRes.getTokenStatus() != TokenStatus.TOKEN_EXPIRED) {
             log.info("Wrong Access Token");
-            totalResult.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
-            return totalResult;
+            aTokenRes.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
+            return false;
         }
 
+        return true;
+    }
+
+    private boolean isTokenPairValid(TokenValidationResult refTokenRes, TokenValidationResult aTokenRes) {
         // tokenId 쌍 검증
         if (!refTokenRes.getTokenId().equals(aTokenRes.getTokenId())) {
             log.info("Wrong refresh & access tokenId pair");
-            totalResult.setTokenStatus(TokenStatus.TOKEN_ID_NOT_MATCH);
-            return totalResult;
+            return false;
         }
 
-        totalResult.setTokenId(aTokenRes.getTokenId());
-        return totalResult;
+        return true;
     }
 
     public boolean isAccessTokenBlackList(String accessToken) {

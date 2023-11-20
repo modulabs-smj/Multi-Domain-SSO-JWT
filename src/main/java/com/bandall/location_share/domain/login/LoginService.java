@@ -87,18 +87,19 @@ public class LoginService {
 
     // TODO : RefreshToken에 TokenId만 저장
     public TokenInfoDto refreshToken(String accessToken, String refreshToken) {
-        TokenValidationResult validationResult = tokenProvider.isAccessTokenAndRefreshTokenValid(accessToken, refreshToken);
+        TokenValidationResult validationResult = tokenProvider.isAccessAndRefreshTokenValid(accessToken, refreshToken);
         // 1. validateToken에 tokenId 값 추가해서 검사
         // 2. tokenId를 통해 blackList 없이 검증 가능 + db에 refresh 토큰 value를 저장하지 않아도 됨(tokenID만 저장)
+        // 3. RefreshToken
         switch (validationResult.getTokenStatus()) {
             case TOKEN_EXPIRED ->
                     throw new IllegalArgumentException(TokenStatus.TOKEN_EXPIRED.getMessageKr(TokenType.REFRESH));
-            case TOKEN_WRONG_SIGNATURE ->
-                    throw new IllegalArgumentException(TokenStatus.TOKEN_WRONG_SIGNATURE.getMessageKr(TokenType.REFRESH));
             case TOKEN_IS_BLACKLIST ->
-                    throw new IllegalArgumentException(TokenStatus.TOKEN_IS_BLACKLIST.getMessageKr(TokenType.REFRESH));
+                    throw new IllegalArgumentException(TokenStatus.TOKEN_IS_BLACKLIST.getMessageKr(TokenType.ACCESS));
+            case TOKEN_WRONG_SIGNATURE ->
+                    throw new IllegalArgumentException(TokenStatus.TOKEN_WRONG_SIGNATURE.getMessageKr(null));
             case TOKEN_ID_NOT_MATCH ->
-                    throw new IllegalArgumentException(TokenStatus.TOKEN_ID_NOT_MATCH.getMessageKr(TokenType.REFRESH));
+                    throw new IllegalArgumentException(TokenStatus.TOKEN_ID_NOT_MATCH.getMessageKr(null));
         }
 
         RefreshToken refreshTokenInDb = findRefreshTokenByValue(refreshToken);

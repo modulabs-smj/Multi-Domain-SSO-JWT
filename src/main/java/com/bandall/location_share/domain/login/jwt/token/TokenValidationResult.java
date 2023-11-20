@@ -9,6 +9,7 @@ public class TokenValidationResult {
     private Boolean result;
     private TokenType tokenType;
     private String tokenId;
+    private String email;
     private TokenStatus tokenStatus;
     private Exception exception;
 }
