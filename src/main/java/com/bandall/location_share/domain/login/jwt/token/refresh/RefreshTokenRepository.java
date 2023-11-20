@@ -8,22 +8,21 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @LoggerAOP
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
-    Optional<RefreshToken> findRefreshTokenByValue(String value);
+
+    boolean existsByTokenIdAndOwnerEmail(String tokenId, String ownerEmail);
 
     List<RefreshToken> findAllByOwnerEmail(String email);
-
-    @Query("select r from RefreshToken r where r.expireTime < :now")
-    List<RefreshToken> findRefreshTokensByExpireTimeBefore(@Param("now") Date expireTime);
 
     @Modifying(clearAutomatically = true)
     @Query("delete from RefreshToken r where r.expireTime < :expireTime")
     void deleteExpiredTokens(@Param("expireTime") Date expireTime);
 
-    void deleteRefreshTokenByValue(String value);
+    @Modifying(clearAutomatically = true)
+    @Query("delete from RefreshToken r where r.tokenId=:tokenId and r.ownerEmail=:ownerEmail")
+    void deleteRefreshTokenByTokenIdAndOwnerEmail(@Param("tokenId") String tokenId, @Param("ownerEmail") String ownerEmail);
 
     @Modifying(clearAutomatically = true)
     @Query("delete from RefreshToken r where r.ownerEmail=:email")

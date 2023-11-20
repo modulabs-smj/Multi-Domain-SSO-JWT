@@ -2,13 +2,15 @@ package com.bandall.location_share.domain.login.jwt.token.refresh;
 
 import com.bandall.location_share.domain.member.BaseTimeEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Entity
 @Getter
-@ToString(exclude = "value")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RefreshToken extends BaseTimeEntity {
 
@@ -19,15 +21,15 @@ public class RefreshToken extends BaseTimeEntity {
     @Column(length = 50)
     private String ownerEmail;
 
-    @Column(length = 300, name = "token_value")
-    private String value;
+    @Column(length = 36)
+    private String tokenId;
 
     private Date expireTime;
 
     @Builder
-    public RefreshToken(String ownerEmail, String value, Date expireTime) {
+    public RefreshToken(String ownerEmail, String tokenId, Date expireTime) {
         this.ownerEmail = ownerEmail;
-        this.value = value;
+        this.tokenId = tokenId;
         this.expireTime = expireTime;
     }
 }

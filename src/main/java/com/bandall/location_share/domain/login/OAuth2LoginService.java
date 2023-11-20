@@ -77,7 +77,7 @@ public class OAuth2LoginService {
         TokenInfoDto tokenInfoDto = tokenProvider.createToken(member);
         RefreshToken newRefreshToken = RefreshToken.builder()
                 .ownerEmail(tokenInfoDto.getOwnerEmail())
-                .value(tokenInfoDto.getRefreshToken())
+                .tokenId(tokenInfoDto.getTokenId())
                 .expireTime(tokenInfoDto.getRefreshTokenExpireTime())
                 .build();
         refreshTokenRepository.save(newRefreshToken);

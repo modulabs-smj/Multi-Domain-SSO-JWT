@@ -74,7 +74,7 @@ public class LoginService {
             TokenInfoDto tokenInfoDto = tokenProvider.createToken(member);
             RefreshToken refreshToken = RefreshToken.builder()
                     .ownerEmail(tokenInfoDto.getOwnerEmail())
-                    .value(tokenInfoDto.getRefreshToken())
+                    .tokenId(tokenInfoDto.getTokenId())
                     .expireTime(tokenInfoDto.getRefreshTokenExpireTime())
                     .build();
             refreshTokenRepository.save(refreshToken);
@@ -84,13 +84,11 @@ public class LoginService {
             throw new BadCredentialsException("계정이 존재하지 않거나 비밀번호가 잘못되었습니다. 소셜 로그인의 경우 소셜 로그인을 이용해주세요.");
         }
     }
-
-    // TODO : RefreshToken에 TokenId만 저장
+    
     public TokenInfoDto refreshToken(String accessToken, String refreshToken) {
         TokenValidationResult validationResult = tokenProvider.isAccessAndRefreshTokenValid(accessToken, refreshToken);
         // 1. validateToken에 tokenId 값 추가해서 검사
         // 2. tokenId를 통해 blackList 없이 검증 가능 + db에 refresh 토큰 value를 저장하지 않아도 됨(tokenID만 저장)
-        // 3. RefreshToken
         switch (validationResult.getTokenStatus()) {
             case TOKEN_EXPIRED ->
                     throw new IllegalArgumentException(TokenStatus.TOKEN_EXPIRED.getMessageKr(TokenType.REFRESH));
@@ -102,8 +100,10 @@ public class LoginService {
                     throw new IllegalArgumentException(TokenStatus.TOKEN_ID_NOT_MATCH.getMessageKr(null));
         }
 
-        RefreshToken refreshTokenInDb = findRefreshTokenByValue(refreshToken);
-        String email = refreshTokenInDb.getOwnerEmail();
+        String tokenId = validationResult.getTokenId();
+        String email = validationResult.getEmail();
+
+        checkRefreshTokenExists(tokenId, email);
 
         Member member = findMemberByEmail(email);
 
@@ -111,21 +111,25 @@ public class LoginService {
         TokenInfoDto tokenInfoDto = tokenProvider.createToken(member);
         RefreshToken newRefreshToken = RefreshToken.builder()
                 .ownerEmail(tokenInfoDto.getOwnerEmail())
-                .value(tokenInfoDto.getRefreshToken())
+                .tokenId(tokenInfoDto.getTokenId())
                 .expireTime(tokenInfoDto.getRefreshTokenExpireTime())
                 .build();
 
+        refreshTokenRepository.deleteRefreshTokenByTokenIdAndOwnerEmail(tokenId, email);
         refreshTokenRepository.save(newRefreshToken);
-        refreshTokenRepository.delete(refreshTokenInDb);
         blackListRepository.setBlackList(accessToken, email);
         return tokenInfoDto;
     }
 
-    // TODO : find -> exist 변경
     public void logout(String email, String accessToken, String refreshToken) {
-        refreshTokenRepository.findRefreshTokenByValue(refreshToken)
-                .orElseThrow(() -> new IllegalArgumentException("잘못된 Refresh 토큰입니다."));
-        refreshTokenRepository.deleteRefreshTokenByValue(refreshToken);
+        TokenValidationResult validationResult = tokenProvider.validateToken(refreshToken);
+
+        if (!validationResult.getResult()) {
+            throw new IllegalArgumentException("존재하지 않는 Refresh 토큰입니다.");
+        }
+
+        String tokenId = validationResult.getTokenId();
+        refreshTokenRepository.deleteRefreshTokenByTokenIdAndOwnerEmail(tokenId, email);
         blackListRepository.setBlackList(accessToken, email);
     }
 
@@ -180,9 +184,10 @@ public class LoginService {
         });
     }
 
-    private RefreshToken findRefreshTokenByValue(String refreshToken) {
-        return refreshTokenRepository.findRefreshTokenByValue(refreshToken).orElseThrow(() ->
-                new IllegalArgumentException("존재하지 않는 Refresh 토큰입니다."));
+    private void checkRefreshTokenExists(String tokenId, String ownerEmail) {
+        if (!refreshTokenRepository.existsByTokenIdAndOwnerEmail(tokenId, ownerEmail)) {
+            throw new IllegalArgumentException("존재하지 않는 Refresh 토큰입니다.");
+        }
     }
 
     private void checkPassword(String password, Member member) {

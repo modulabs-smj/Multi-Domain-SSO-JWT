@@ -67,7 +67,7 @@ public class LoginController {
 
     @PostMapping("/api/account/refresh")
     public ApiResponseJson refreshTokens(@Valid @RequestBody TokenInfoDto tokenInfoDto, BindingResult bindingResult) {
-        log.info("Received request to refresh token: {}", tokenInfoDto);
+        log.info("Received request to refresh token");
         if (bindingResult.hasErrors()) {
             log.info("Invalid token refresh request with errors: {}", bindingResult.getAllErrors());
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
