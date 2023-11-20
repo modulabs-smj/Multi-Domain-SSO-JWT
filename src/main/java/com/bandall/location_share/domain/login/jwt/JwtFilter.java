@@ -1,10 +1,11 @@
 package com.bandall.location_share.domain.login.jwt;
 
 
+import com.bandall.location_share.domain.login.jwt.dto.TokenValidationResult;
 import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
 import com.bandall.location_share.domain.login.jwt.token.TokenStatus;
 import com.bandall.location_share.domain.login.jwt.token.TokenType;
-import com.bandall.location_share.domain.login.jwt.token.TokenValidationResult;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,25 +52,25 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // 토큰이 블랙리스트인 경우
         if (tokenProvider.isAccessTokenBlackList(token)) {
-            handleBlackListedToken(request, response, filterChain, tokenValidationResult);
+            handleBlackListedToken(request, response, filterChain);
             return;
         }
 
         // 정상적인 토큰인 경우 SecurityContext에 Authentication 설정
-        handleValidToken(request, response, filterChain, token);
-    }
-
-    private void handleValidToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, String token) throws IOException, ServletException {
-        Authentication authentication = tokenProvider.getAuthentication(token);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        log.info("AUTH SUCCESS : {},", authentication.getName());
+        handleValidToken(token, tokenValidationResult.getClaims());
         filterChain.doFilter(request, response);
     }
 
-    private void handleBlackListedToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, TokenValidationResult tokenValidationResult) throws IOException, ServletException {
-        tokenValidationResult.setResult(false);
-        tokenValidationResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
-        request.setAttribute("result", tokenValidationResult);
+    private void handleValidToken(String token, Claims claims) {
+        Authentication authentication = tokenProvider.getAuthentication(token, claims);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.info("AUTH SUCCESS : {},", authentication.getName());
+    }
+
+    private void handleBlackListedToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+        request.setAttribute("result",
+                new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_IS_BLACKLIST)
+        );
         filterChain.doFilter(request, response);
     }
 

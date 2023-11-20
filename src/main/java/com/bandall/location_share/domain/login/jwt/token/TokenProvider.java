@@ -2,6 +2,8 @@ package com.bandall.location_share.domain.login.jwt.token;
 
 import com.bandall.location_share.aop.LoggerAOP;
 import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.jwt.dto.TokenValidationResult;
+import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import io.jsonwebtoken.*;
@@ -81,13 +83,7 @@ public class TokenProvider {
     }
 
     // access 토큰을 인자로 전달받아 클레임을 만들어 권한 정보 반환
-    public Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(hashKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
+    public Authentication getAuthentication(String token, Claims claims) {
         Collection<? extends GrantedAuthority> authorities =
                 Arrays.stream(claims.get(KEY_AUTHORITIES).toString().split(","))
                         .map(SimpleGrantedAuthority::new)
@@ -104,7 +100,7 @@ public class TokenProvider {
         try {
             Claims claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
             TokenType tokenType = claims.get(KEY_AUTHORITIES) == null ? TokenType.REFRESH : TokenType.ACCESS;
-            return new TokenValidationResult(true, tokenType, claims.get(KEY_TOKEN_ID, String.class), claims.getSubject(), TokenStatus.TOKEN_VALID);
+            return new TokenValidationResult(true, tokenType, claims.get(KEY_TOKEN_ID, String.class), claims, TokenStatus.TOKEN_VALID);
         } catch (ExpiredJwtException e) {
             log.info("만료된 jwt 토큰");
             return getExpiredTokenValidationResult(e);
@@ -139,10 +135,10 @@ public class TokenProvider {
         }
 
         if (!isTokenPairValid(refTokenRes, aTokenRes)) {
-            return new TokenValidationResult(false, null, null, refTokenRes.getEmail(), TokenStatus.TOKEN_ID_NOT_MATCH);
+            return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_ID_NOT_MATCH);
         }
 
-        return new TokenValidationResult(true, null, refTokenRes.getTokenId(), refTokenRes.getEmail(), TokenStatus.TOKEN_VALID);
+        return new TokenValidationResult(true, null, refTokenRes.getTokenId(), refTokenRes.getClaims(), TokenStatus.TOKEN_VALID);
     }
 
     private boolean isRefreshTokenValid(TokenValidationResult refTokenRes) {

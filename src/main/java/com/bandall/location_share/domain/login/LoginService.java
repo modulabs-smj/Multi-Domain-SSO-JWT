@@ -2,7 +2,11 @@ package com.bandall.location_share.domain.login;
 
 import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
 import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
-import com.bandall.location_share.domain.login.jwt.token.*;
+import com.bandall.location_share.domain.login.jwt.dto.TokenValidationResult;
+import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
+import com.bandall.location_share.domain.login.jwt.token.TokenStatus;
+import com.bandall.location_share.domain.login.jwt.token.TokenType;
+import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.login.verification_code.EmailVerificationService;
@@ -84,7 +88,7 @@ public class LoginService {
             throw new BadCredentialsException("계정이 존재하지 않거나 비밀번호가 잘못되었습니다. 소셜 로그인의 경우 소셜 로그인을 이용해주세요.");
         }
     }
-    
+
     public TokenInfoDto refreshToken(String accessToken, String refreshToken) {
         TokenValidationResult validationResult = tokenProvider.isAccessAndRefreshTokenValid(accessToken, refreshToken);
         // 1. validateToken에 tokenId 값 추가해서 검사
