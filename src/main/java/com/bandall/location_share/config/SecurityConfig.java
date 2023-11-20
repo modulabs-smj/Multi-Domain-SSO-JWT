@@ -1,8 +1,8 @@
 package com.bandall.location_share.config;
 
-import com.bandall.location_share.domain.login.jwt.JwtFilter;
 import com.bandall.location_share.domain.login.jwt.JwtAccessDeniedHandler;
 import com.bandall.location_share.domain.login.jwt.JwtAuthenticationEntryPoint;
+import com.bandall.location_share.domain.login.jwt.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -29,13 +29,11 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final JwtFilter jwtFilter;
-
-    @Value("${verification.encoder-strength}")
-    private int encoderStrength;
-
     private final String[] adminUrl = {"/admin/**"};
     private final String[] permitAllUrl = {"/error", "/api/account/auth", "/api/account/refresh", "/oauth/login/**"};
     private final String[] anonymousUrl = {"/api/account/create", "/oauth/login/kakao", "/api/account/find-password", "/api/email-verification"};
+    @Value("${verification.encoder-strength}")
+    private int encoderStrength;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
@@ -60,7 +58,7 @@ public class SecurityConfig {
                 .build();
     }
 
-    // cors 설정용 빈 이후 프론트 서버 정보 입력bcryptpasswordencoder
+    // cors 설정용 빈 이후 프론트 서버 정보 입력
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
