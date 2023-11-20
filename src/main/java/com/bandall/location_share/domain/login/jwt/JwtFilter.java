@@ -35,13 +35,10 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
-        // jwt 토큰 예외 구분 처리를 위해 request에 tokenValidationResult를 담아 EntryPoint에 전달
+        // JWT 토큰 예외 구분 처리를 위해 request에 tokenValidationResult를 담아 EntryPoint에 전달
         // Authorization 헤더가 없는 경우
-        if(!StringUtils.hasText(token)) {
-            request.setAttribute("result",
-                    new TokenValidationResult(false, null, null, TokenStatus.WRONG_AUTH_HEADER, null)
-            );
-            filterChain.doFilter(request, response);
+        if (!StringUtils.hasText(token)) {
+            handleMissingToken(request, response, filterChain);
             return;
         }
 
@@ -49,25 +46,44 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // 잘못된 토큰일 경우 (잘못된 토큰, Refresh token을 넣은 경우)
         if (!tokenValidationResult.getResult() || tokenValidationResult.getTokenType() != TokenType.ACCESS) {
-            request.setAttribute("result", tokenValidationResult);
-            filterChain.doFilter(request,response);
+            handleWrongToken(request, response, filterChain, tokenValidationResult);
             return;
         }
 
         // 토큰이 블랙리스트인 경우
         if (tokenProvider.isAccessTokenBlackList(token)) {
-            tokenValidationResult.setResult(false);
-            tokenValidationResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
-            tokenValidationResult.setException(new DiscardedJwtException("Token already discarded"));
-            request.setAttribute("result", tokenValidationResult);
-            filterChain.doFilter(request, response);
+            handleBlackListedToken(request, response, filterChain, tokenValidationResult);
             return;
         }
 
         // 정상적인 토큰인 경우 SecurityContext에 Authentication 설정
+        handleValidToken(request, response, filterChain, token);
+    }
+
+    private void handleValidToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, String token) throws IOException, ServletException {
         Authentication authentication = tokenProvider.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         log.info("AUTH SUCCESS : {},", authentication.getName());
+        filterChain.doFilter(request, response);
+    }
+
+    private void handleBlackListedToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, TokenValidationResult tokenValidationResult) throws IOException, ServletException {
+        tokenValidationResult.setResult(false);
+        tokenValidationResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
+        tokenValidationResult.setException(new DiscardedJwtException("Token already discarded"));
+        request.setAttribute("result", tokenValidationResult);
+        filterChain.doFilter(request, response);
+    }
+
+    private void handleWrongToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, TokenValidationResult tokenValidationResult) throws IOException, ServletException {
+        request.setAttribute("result", tokenValidationResult);
+        filterChain.doFilter(request, response);
+    }
+
+    private void handleMissingToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+        request.setAttribute("result",
+                new TokenValidationResult(false, null, null, TokenStatus.WRONG_AUTH_HEADER, null)
+        );
         filterChain.doFilter(request, response);
     }
 
