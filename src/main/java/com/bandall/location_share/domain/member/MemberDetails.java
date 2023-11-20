@@ -17,6 +17,11 @@ public class MemberDetails implements UserDetails {
     private String password;
     private Role role;
     private boolean isEmailVerified;
+    private boolean isEnabled;
+    private boolean isAccountNonExpired;
+    private boolean isAccountNonLocked;
+    private boolean isCredentialsNonExpired;
+    private Collection<? extends GrantedAuthority> authorities;
 
     public String getEmail() {
         return email;
@@ -25,10 +30,4 @@ public class MemberDetails implements UserDetails {
     public boolean isEmailVerified() {
         return isEmailVerified;
     }
-
-    private boolean isEnabled;
-    private boolean isAccountNonExpired;
-    private boolean isAccountNonLocked;
-    private boolean isCredentialsNonExpired;
-    private Collection<? extends GrantedAuthority> authorities;
 }

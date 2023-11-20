@@ -30,7 +30,6 @@ public class LogFilter extends OncePerRequestFilter {
     private static final String LOG_START_FORMAT = "[REQUEST URI : {}, METHOD : {}, IP : {}]";
     private static final String LOG_END_FORMAT = "Response Time = {}ms";
 
-    // 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String requestURI = request.getRequestURI();

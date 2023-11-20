@@ -1,8 +1,8 @@
 package com.bandall.location_share.domain.member;
 
 import com.bandall.location_share.domain.login.verification_code.VerificationCode;
-import com.bandall.location_share.domain.member.enums.Role;
 import com.bandall.location_share.domain.member.enums.LoginType;
+import com.bandall.location_share.domain.member.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +15,8 @@ import java.time.LocalDateTime;
 @ToString(exclude = {"password"})
 public class Member extends BaseTimeEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id")
     private Long id;
 
@@ -44,19 +45,26 @@ public class Member extends BaseTimeEntity {
 
     private LocalDateTime lastLoginTime;
 
-    public Member updatePassword(String password) {
+    @Builder
+    public Member(LoginType loginType, String email, String password, String username, Role role) {
+        this.loginType = loginType;
+        this.email = email;
+        this.isEmailVerified = false;
         this.password = password;
-        return this;
-    }
-
-    public Member updateUsername(String username) {
         this.username = username;
-        return this;
+        this.role = role;
     }
 
-    public Member updateProfileImageUri(String profileImageUri) {
+    public void updatePassword(String password) {
+        this.password = password;
+    }
+
+    public void updateUsername(String username) {
+        this.username = username;
+    }
+
+    public void updateProfileImageUri(String profileImageUri) {
         this.profileImageUri = profileImageUri;
-        return this;
     }
 
     public void updateVerificationCode(VerificationCode verificationCode) {
@@ -69,15 +77,5 @@ public class Member extends BaseTimeEntity {
 
     public void updateLastLoginTime() {
         this.lastLoginTime = LocalDateTime.now();
-    }
-
-    @Builder
-    public Member(LoginType loginType, String email, String password, String username, Role role) {
-        this.loginType = loginType;
-        this.email = email;
-        this.isEmailVerified = false;
-        this.password = password;
-        this.username = username;
-        this.role = role;
     }
 }
