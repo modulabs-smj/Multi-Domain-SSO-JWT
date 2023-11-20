@@ -1,4 +1,4 @@
-package com.bandall.location_share.domain.login.jwt.token;
+package com.bandall.location_share.domain.login.jwt.token.access;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ public class RedisAccessTokenBlackListRepository {
     private Long accessTokenTimeoutTime;
 
     public void setBlackList(String key, Object o) {
-        redisBlackListTemplate.setValueSerializer(new Jackson2JsonRedisSerializer(o.getClass()));
+        redisBlackListTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(o.getClass()));
         redisBlackListTemplate.opsForValue().set(key, o, accessTokenTimeoutTime * 1000, TimeUnit.MILLISECONDS);
     }
 

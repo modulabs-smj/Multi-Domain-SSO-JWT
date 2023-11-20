@@ -3,7 +3,7 @@ package com.bandall.location_share.api;
 import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
 import com.bandall.location_share.domain.login.LoginService;
 import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
-import com.bandall.location_share.domain.login.jwt.token.RedisAccessTokenBlackListRepository;
+import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.MemberJpaRepository;
@@ -20,7 +20,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import static org.assertj.core.api.Assertions.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Rollback
 @Transactional
@@ -69,7 +71,7 @@ public class BasicLoginTest {
         assertThat(member.getUsername()).isEqualTo(username);
     }
 
-//    @Test
+    //    @Test
     @DisplayName("로그인 테스트[이메일 인증 전]")
     void 로그인1() {
         // given
@@ -95,7 +97,7 @@ public class BasicLoginTest {
 
         // when
         TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
-        log.info("{}" , tokenInfoDto);
+        log.info("{}", tokenInfoDto);
 
         // then
         assertThat(tokenInfoDto.getOwnerEmail()).isEqualTo(email);
@@ -162,7 +164,7 @@ public class BasicLoginTest {
 
         // then
         assertThatThrownBy(() -> loginService.updatePassword(email, newPassword, password + "123")).isInstanceOf(BadCredentialsException.class);
-        assertThatThrownBy(() -> loginService.updatePassword(email,"1234", password)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> loginService.updatePassword(email, "1234", password)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> loginService.updatePassword("123@asd.com", newPassword, password)).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -279,7 +281,7 @@ public class BasicLoginTest {
         MemberCreateDto memberCreateDto = new MemberCreateDto(email, password, username);
         loginService.createMember(memberCreateDto);
 
-        if(setEmailVerified) setEmailVerified(email);
+        if (setEmailVerified) setEmailVerified(email);
     }
 
     private void setEmailVerified(String email) {
