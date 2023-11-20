@@ -3,7 +3,7 @@ package com.bandall.location_share.api;
 import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
-import com.bandall.location_share.web.controller.json.TokenStatusCode;
+import com.bandall.location_share.web.controller.json.ResponseStatusCode;
 import com.bandall.location_share.web.filter.LogFilter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,18 +36,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SpringSecurityJwtTest {
 
-    @LocalServerPort
-    private int port;
-
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    @Autowired
-    private ObjectMapper mapper;
-
     String email = "abasdfasdfc@gma123il.com";
     String password = "bandallgom123!!";
     String username = "반달77";
+    @LocalServerPort
+    private int port;
+    @Autowired
+    private TestRestTemplate restTemplate;
+    @Autowired
+    private ObjectMapper mapper;
 
     @PostConstruct
     void postConstruct() {
@@ -76,7 +73,7 @@ public class SpringSecurityJwtTest {
         // then
         log.info("{}", response.getBody());
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getCode()).isEqualTo(TokenStatusCode.OK);
+        assertThat(response.getBody().getCode()).isEqualTo(ResponseStatusCode.OK);
     }
 
     @Test
@@ -94,7 +91,7 @@ public class SpringSecurityJwtTest {
         // then
         log.info("{}", response.getBody());
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody().getCode()).isNotEqualTo(TokenStatusCode.OK);
+        assertThat(response.getBody().getCode()).isNotEqualTo(ResponseStatusCode.OK);
     }
 
     @Test
@@ -112,7 +109,7 @@ public class SpringSecurityJwtTest {
         // then
         log.info("{}", response.getBody());
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody().getCode()).isEqualTo(TokenStatusCode.NO_AUTH_HEADER);
+        assertThat(response.getBody().getCode()).isEqualTo(ResponseStatusCode.NO_AUTH_HEADER);
     }
 
     @Test
@@ -130,7 +127,7 @@ public class SpringSecurityJwtTest {
         // then
         log.info("{}", response.getBody());
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody().getCode()).isEqualTo(TokenStatusCode.NO_AUTH_HEADER);
+        assertThat(response.getBody().getCode()).isEqualTo(ResponseStatusCode.NO_AUTH_HEADER);
     }
 
     @Test
@@ -152,7 +149,7 @@ public class SpringSecurityJwtTest {
 
         // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody().getCode()).isEqualTo(TokenStatusCode.TOKEN_EXPIRED);
+        assertThat(response.getBody().getCode()).isEqualTo(ResponseStatusCode.TOKEN_EXPIRED);
     }
 
     @Test
@@ -174,7 +171,7 @@ public class SpringSecurityJwtTest {
 
         // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody().getCode()).isEqualTo(TokenStatusCode.TOKEN_IS_BLACKLIST);
+        assertThat(response.getBody().getCode()).isEqualTo(ResponseStatusCode.TOKEN_IS_BLACKLIST);
     }
 
     @Test
@@ -198,7 +195,7 @@ public class SpringSecurityJwtTest {
 
         // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody().getCode()).isEqualTo(TokenStatusCode.TOKEN_IS_BLACKLIST);
+        assertThat(response.getBody().getCode()).isEqualTo(ResponseStatusCode.TOKEN_IS_BLACKLIST);
     }
 
     private String makeUrl(String url) {
@@ -223,7 +220,7 @@ public class SpringSecurityJwtTest {
         json.put("password", password);
         json.put("loginType", LoginType.EMAIL_PW.toString());
 
-        String url = "http://localhost:"+ port+ "/api/account/auth";
+        String url = "http://localhost:" + port + "/api/account/auth";
         ResponseEntity<String> response = restTemplate.postForEntity(url, json, String.class);
         TokenInfoDto tokenInfoDto = parseTokenInfoDto(response);
         return tokenInfoDto;
@@ -249,7 +246,7 @@ public class SpringSecurityJwtTest {
         json.put("password", password);
         json.put("username", username);
 
-        String url = "http://localhost:"+ port+ "/api/account/create";
+        String url = "http://localhost:" + port + "/api/account/create";
         restTemplate.postForEntity(url, json, String.class);
     }
 }

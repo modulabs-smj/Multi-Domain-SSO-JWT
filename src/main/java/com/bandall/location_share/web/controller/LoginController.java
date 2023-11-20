@@ -37,7 +37,7 @@ public class LoginController {
     public ApiResponseJson createNewAccount(@Valid @RequestBody MemberCreateDto memberCreateDto, BindingResult bindingResult) {
         log.info("Request received to create account with data: {}", memberCreateDto);
         if (bindingResult.hasErrors()) {
-            log.error("Data provided for account creation is invalid: {}", bindingResult);
+            log.info("Data provided for account creation is invalid: {}", bindingResult);
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
@@ -55,7 +55,7 @@ public class LoginController {
     public ApiResponseJson authenticateAccountAndIssueToken(@Valid @RequestBody MemberLoginDto memberLoginDto, BindingResult bindingResult) {
         log.info("Received request to authenticate account: {}", memberLoginDto.getEmail());
         if (bindingResult.hasErrors()) {
-            log.error("Invalid account authentication request with errors: {}", bindingResult.getAllErrors());
+            log.info("Invalid account authentication request with errors: {}", bindingResult.getAllErrors());
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
@@ -69,7 +69,7 @@ public class LoginController {
     public ApiResponseJson refreshTokens(@Valid @RequestBody TokenInfoDto tokenInfoDto, BindingResult bindingResult) {
         log.info("Received request to refresh token: {}", tokenInfoDto);
         if (bindingResult.hasErrors()) {
-            log.error("Invalid token refresh request with errors: {}", bindingResult.getAllErrors());
+            log.info("Invalid token refresh request with errors: {}", bindingResult.getAllErrors());
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
@@ -85,7 +85,7 @@ public class LoginController {
         String refreshToken = json.get(REFRESH_TOKEN_KEY);
 
         if (!StringUtils.hasText(refreshToken)) {
-            log.error("Invalid logout request: refreshToken is missing");
+            log.info("Invalid logout request: refreshToken is missing");
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
@@ -99,7 +99,7 @@ public class LoginController {
         log.info("Received request to update username for account: {}", user.getEmail());
         String username = memberUpdateDto.getUsername();
         if (!StringUtils.hasText(username)) {
-            log.error("Invalid username update request: new username is missing");
+            log.info("Invalid username update request: new username is missing");
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
@@ -119,7 +119,7 @@ public class LoginController {
         String oldPassword = memberUpdateDto.getOldPassword();
 
         if (!StringUtils.hasText(newPassword) || !StringUtils.hasText(oldPassword)) {
-            log.error("Invalid password update request: newPassword or oldPassword is missing");
+            log.info("Invalid password update request: newPassword or oldPassword is missing");
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
@@ -132,7 +132,7 @@ public class LoginController {
     public ApiResponseJson getPasswordResetCode(@RequestParam(required = false) String email) {
         log.info("Received request to get password reset code for account: {}", email);
         if (!StringUtils.hasText(email)) {
-            log.error("Invalid password reset code request: email is missing");
+            log.info("Invalid password reset code request: email is missing");
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
@@ -156,7 +156,7 @@ public class LoginController {
         log.info("Received request to delete account: {}", user.getEmail());
         String password = json.get(PASSWORD_KEY);
         if (!StringUtils.hasText(password)) {
-            log.error("Invalid account deletion request: password is missing");
+            log.info("Invalid account deletion request: password is missing");
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
@@ -169,7 +169,7 @@ public class LoginController {
     public ApiResponseJson getVerifyEmail(@RequestParam(required = false) String email) {
         log.info("Received request to get email verification for account: {}", email);
         if (!StringUtils.hasText(email)) {
-            log.error("Invalid email verification request: email is missing");
+            log.info("Invalid email verification request: email is missing");
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 

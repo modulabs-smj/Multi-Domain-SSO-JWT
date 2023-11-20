@@ -5,9 +5,9 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.springframework.http.HttpStatus;
 
-@NoArgsConstructor
-@ToString
 @Getter
+@ToString
+@NoArgsConstructor
 public class ApiResponseJson {
     public HttpStatus httpStatus;
     public int code;
@@ -21,7 +21,8 @@ public class ApiResponseJson {
 
     public ApiResponseJson(HttpStatus httpStatus, Object data) {
         this.httpStatus = httpStatus;
-        this.code = TokenStatusCode.OK;
+        this.code = ResponseStatusCode.OK;
         this.data = data;
     }
 }
+
