@@ -20,13 +20,15 @@ import java.io.IOException;
 @Component
 @Order(SecurityProperties.DEFAULT_FILTER_ORDER - 1)
 public class ExceptionFilter extends OncePerRequestFilter {
+    private static final String INTERNAL_SERVER_ERROR = "Unexpected Server Error";
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
             doFilter(request, response, filterChain);
         } catch (Exception e) {
-            log.error("예상치 못한 오류 발생", e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected Server Error");
+            log.error(INTERNAL_SERVER_ERROR, e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR);
         }
     }
 }
