@@ -1,10 +1,9 @@
 package com.bandall.location_share.domain.login;
 
-import com.bandall.location_share.domain.exceptions.DbException;
 import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
 import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
-import com.bandall.location_share.domain.login.jwt.token.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
+import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.login.oauth2.OAuth2UserInfoProvider;
@@ -61,8 +60,7 @@ public class OAuth2LoginService {
             memberRepository.save(newMember);
         }
 
-
-        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new DbException("db에 오류 발생"));
+        Member member = findMemberByEmail(email);
 
         if (member.getLoginType() == LoginType.EMAIL_PW) {
             log.info("잘못된 로그인 타입");
@@ -82,6 +80,10 @@ public class OAuth2LoginService {
                 .build();
         refreshTokenRepository.save(newRefreshToken);
         return tokenInfoDto;
+    }
+
+    private Member findMemberByEmail(String email) {
+        return memberRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("계정이 존재하지 않습니다."));
     }
 
     public void deleteSocialUser(String socialAccessToken, String accessToken, LoginType loginType, String email) {

@@ -1,8 +1,8 @@
 package com.bandall.location_share.domain.login.jwt;
 
+import com.bandall.location_share.domain.login.jwt.dto.TokenValidationResult;
 import com.bandall.location_share.domain.login.jwt.token.TokenStatus;
 import com.bandall.location_share.domain.login.jwt.token.TokenType;
-import com.bandall.location_share.domain.login.jwt.token.TokenValidationResult;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import com.bandall.location_share.web.controller.json.ResponseStatusCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
