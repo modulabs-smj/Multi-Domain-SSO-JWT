@@ -6,7 +6,7 @@ public enum TokenStatus {
     TOKEN_IS_BLACKLIST("%s Discarded", "%s이 폐기된 상태입니다."),
     TOKEN_WRONG_SIGNATURE("Wrong %s", "잘못된 %s입니다."),
     TOKEN_HASH_NOT_SUPPORTED("%s Unsupported", "지원하지 않는 형식의 %s입니다."),
-    WRONG_AUTH_HEADER("Wrong Authorization Header", "지원하지 않는 형식의 %s입니다."),
+    WRONG_AUTH_HEADER("Wrong Authorization Header", "[Bearer ]로 시작하는 %s이 없습니다."),
     TOKEN_ID_NOT_MATCH("Token ID Not Match", "TokenId가 서로 일치하지 않습니다."),
     TOKEN_VALIDATION_TRY_FAILED("Wrong Authentication", "인증에 실패했습니다.");
 
