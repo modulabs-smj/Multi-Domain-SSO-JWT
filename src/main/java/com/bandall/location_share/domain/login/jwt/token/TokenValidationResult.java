@@ -11,5 +11,4 @@ public class TokenValidationResult {
     private String tokenId;
     private String email;
     private TokenStatus tokenStatus;
-    private Exception exception;
 }

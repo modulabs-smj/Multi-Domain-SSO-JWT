@@ -104,26 +104,26 @@ public class TokenProvider {
         try {
             Claims claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
             TokenType tokenType = claims.get(KEY_AUTHORITIES) == null ? TokenType.REFRESH : TokenType.ACCESS;
-            return new TokenValidationResult(true, tokenType, claims.get(KEY_TOKEN_ID, String.class), claims.getSubject(), TokenStatus.TOKEN_VALID, null);
+            return new TokenValidationResult(true, tokenType, claims.get(KEY_TOKEN_ID, String.class), claims.getSubject(), TokenStatus.TOKEN_VALID);
         } catch (ExpiredJwtException e) {
             log.info("만료된 jwt 토큰");
             return getExpiredTokenValidationResult(e);
         } catch (SecurityException | MalformedJwtException e) {
             log.info("잘못된 jwt 서명");
-            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE, null);
+            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE);
         } catch (UnsupportedJwtException e) {
             log.info("지원되지 않는 jwt 서명");
-            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_HASH_NOT_SUPPORTED, null);
+            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_HASH_NOT_SUPPORTED);
         } catch (IllegalArgumentException e) {
             log.info("잘못된 jwt 토큰");
-            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE, null);
+            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE);
         }
     }
 
     private TokenValidationResult getExpiredTokenValidationResult(ExpiredJwtException e) {
         log.info("만료된 jwt 토큰");
         Claims claims = e.getClaims();
-        return new TokenValidationResult(false, TokenType.ACCESS, claims.get(KEY_TOKEN_ID, String.class), null, TokenStatus.TOKEN_EXPIRED, null);
+        return new TokenValidationResult(false, TokenType.ACCESS, claims.get(KEY_TOKEN_ID, String.class), null, TokenStatus.TOKEN_EXPIRED);
     }
 
     public TokenValidationResult isAccessAndRefreshTokenValid(String accessToken, String refreshToken) {
@@ -139,10 +139,10 @@ public class TokenProvider {
         }
 
         if (!isTokenPairValid(refTokenRes, aTokenRes)) {
-            return new TokenValidationResult(false, null, null, refTokenRes.getEmail(), TokenStatus.TOKEN_ID_NOT_MATCH, null);
+            return new TokenValidationResult(false, null, null, refTokenRes.getEmail(), TokenStatus.TOKEN_ID_NOT_MATCH);
         }
 
-        return new TokenValidationResult(true, null, refTokenRes.getTokenId(), refTokenRes.getEmail(), TokenStatus.TOKEN_VALID, null);
+        return new TokenValidationResult(true, null, refTokenRes.getTokenId(), refTokenRes.getEmail(), TokenStatus.TOKEN_VALID);
     }
 
     private boolean isRefreshTokenValid(TokenValidationResult refTokenRes) {

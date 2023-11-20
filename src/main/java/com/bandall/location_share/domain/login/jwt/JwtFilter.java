@@ -1,7 +1,6 @@
 package com.bandall.location_share.domain.login.jwt;
 
 
-import com.bandall.location_share.domain.exceptions.DiscardedJwtException;
 import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
 import com.bandall.location_share.domain.login.jwt.token.TokenStatus;
 import com.bandall.location_share.domain.login.jwt.token.TokenType;
@@ -67,11 +66,9 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // TODO : tokenValidationResult에 Exception 제거
     private void handleBlackListedToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, TokenValidationResult tokenValidationResult) throws IOException, ServletException {
         tokenValidationResult.setResult(false);
         tokenValidationResult.setTokenStatus(TokenStatus.TOKEN_IS_BLACKLIST);
-        tokenValidationResult.setException(new DiscardedJwtException("Token already discarded"));
         request.setAttribute("result", tokenValidationResult);
         filterChain.doFilter(request, response);
     }
@@ -83,7 +80,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private void handleMissingToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         request.setAttribute("result",
-                new TokenValidationResult(false, null, null, null, TokenStatus.WRONG_AUTH_HEADER, null)
+                new TokenValidationResult(false, null, null, null, TokenStatus.WRONG_AUTH_HEADER)
         );
         filterChain.doFilter(request, response);
     }

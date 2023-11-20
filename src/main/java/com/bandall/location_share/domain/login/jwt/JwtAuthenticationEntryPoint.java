@@ -38,10 +38,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             case TOKEN_WRONG_SIGNATURE -> errorCode = ResponseStatusCode.TOKEN_WRONG_SIGNATURE;
             case TOKEN_HASH_NOT_SUPPORTED -> errorCode = ResponseStatusCode.TOKEN_HASH_NOT_SUPPORTED;
             case WRONG_AUTH_HEADER -> errorCode = ResponseStatusCode.NO_AUTH_HEADER;
-            case TOKEN_VALIDATION_TRY_FAILED -> {
-                log.error("Error while validating token", result.getException());
-                errorCode = ResponseStatusCode.TOKEN_VALIDATION_TRY_FAILED;
-            }
             default -> {
                 errorMessage = TokenStatus.TOKEN_VALIDATION_TRY_FAILED.getMessageKr(TokenType.ACCESS);
                 errorCode = ResponseStatusCode.TOKEN_VALIDATION_TRY_FAILED;
