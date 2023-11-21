@@ -28,23 +28,21 @@ import java.util.stream.Collectors;
 @LoggerAOP
 public class TokenProvider {
 
-    protected static final String KEY_AUTHORITIES = "auth";
-    protected static final String KEY_TOKEN_ID = "tokenId";
-    protected static final String KEY_USERNAME = "username";
+    private static final String AUTHORITIES_KEY = "auth";
+    private static final String TOKEN_ID_KEY = "tokenId";
+    private static final String USERNAME_KEY = "username";
 
-    protected final String secrete;
-    protected final long accessTokenValidationInMilliseconds;
-    protected final long refreshTokenValidationInMilliseconds;
-    protected final Key hashKey;
+    private final Key hashKey;
+    private final long accessTokenValidationInMilliseconds;
+    private final long refreshTokenValidationInMilliseconds;
 
-    protected final RedisAccessTokenBlackListRepository blackListRepository;
+    private final RedisAccessTokenBlackListRepository blackListRepository;
 
-    public TokenProvider(String secrete, long accessTokenValidationInSeconds, long refreshTokenValidationInMilliseconds, RedisAccessTokenBlackListRepository blackListRepository) {
-        this.secrete = secrete;
-        this.accessTokenValidationInMilliseconds = accessTokenValidationInSeconds * 1000;
-        this.refreshTokenValidationInMilliseconds = refreshTokenValidationInMilliseconds * 1000;
+    public TokenProvider(String secrete, long accessTokenValidationInSeconds, long refreshTokenValidationSeconds, RedisAccessTokenBlackListRepository blackListRepository) {
         byte[] keyBytes = Decoders.BASE64.decode(secrete);
         this.hashKey = Keys.hmacShaKeyFor(keyBytes);
+        this.accessTokenValidationInMilliseconds = accessTokenValidationInSeconds * 1000;
+        this.refreshTokenValidationInMilliseconds = refreshTokenValidationSeconds * 1000;
         this.blackListRepository = blackListRepository;
     }
 
@@ -57,9 +55,9 @@ public class TokenProvider {
         // Access 토큰
         String accessToken = Jwts.builder()
                 .setSubject(member.getEmail())
-                .claim(KEY_AUTHORITIES, member.getRole())
-                .claim(KEY_USERNAME, member.getUsername())
-                .claim(KEY_TOKEN_ID, tokenId)
+                .claim(AUTHORITIES_KEY, member.getRole())
+                .claim(USERNAME_KEY, member.getUsername())
+                .claim(TOKEN_ID_KEY, tokenId)
                 .signWith(hashKey, SignatureAlgorithm.HS512)
                 .setExpiration(accessTokenExpireTime)
                 .compact();
@@ -68,7 +66,7 @@ public class TokenProvider {
         String refreshToken = Jwts.builder()
                 .setExpiration(refreshTokenExpireTime)
                 .setSubject(member.getEmail())
-                .claim(KEY_TOKEN_ID, tokenId)
+                .claim(TOKEN_ID_KEY, tokenId)
                 .signWith(hashKey, SignatureAlgorithm.HS512)
                 .compact();
 
@@ -85,12 +83,12 @@ public class TokenProvider {
     // access 토큰을 인자로 전달받아 클레임을 만들어 권한 정보 반환
     public Authentication getAuthentication(String token, Claims claims) {
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(KEY_AUTHORITIES).toString().split(","))
+                Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
         // 커스텀한 UserPrinciple 객체 사용 -> 이후 추가적인 데이터를 토큰에 넣을 경우 UserPrinciple 객체 및 이 클래스의 함수들 수정 필요
-        UserPrinciple principle = new UserPrinciple(claims.getSubject(), claims.get(KEY_USERNAME, String.class), authorities);
+        UserPrinciple principle = new UserPrinciple(claims.getSubject(), claims.get(USERNAME_KEY, String.class), authorities);
 
         return new UsernamePasswordAuthenticationToken(principle, token, authorities);
     }
@@ -99,42 +97,42 @@ public class TokenProvider {
     public TokenValidationResult validateToken(String token) {
         try {
             Claims claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
-            TokenType tokenType = claims.get(KEY_AUTHORITIES) == null ? TokenType.REFRESH : TokenType.ACCESS;
-            return new TokenValidationResult(true, tokenType, claims.get(KEY_TOKEN_ID, String.class), claims, TokenStatus.TOKEN_VALID);
+            TokenType tokenType = claims.get(AUTHORITIES_KEY) == null ? TokenType.REFRESH : TokenType.ACCESS;
+            return new TokenValidationResult(true, tokenType, claims.get(TOKEN_ID_KEY, String.class), claims, TokenStatus.TOKEN_VALID);
         } catch (ExpiredJwtException e) {
-            log.info("만료된 jwt 토큰");
+            log.info("만료된 JWT 토큰");
             return getExpiredTokenValidationResult(e);
         } catch (SecurityException | MalformedJwtException e) {
-            log.info("잘못된 jwt 서명");
-            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE);
+            log.info("잘못된 JWT 서명");
+            return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE);
         } catch (UnsupportedJwtException e) {
-            log.info("지원되지 않는 jwt 서명");
-            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_HASH_NOT_SUPPORTED);
+            log.info("지원되지 않는 JWT 서명");
+            return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_HASH_NOT_SUPPORTED);
         } catch (IllegalArgumentException e) {
-            log.info("잘못된 jwt 토큰");
-            return new TokenValidationResult(false, TokenType.ACCESS, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE);
+            log.info("잘못된 JWT 토큰");
+            return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE);
         }
     }
 
     private TokenValidationResult getExpiredTokenValidationResult(ExpiredJwtException e) {
-        log.info("만료된 jwt 토큰");
         Claims claims = e.getClaims();
-        return new TokenValidationResult(false, TokenType.ACCESS, claims.get(KEY_TOKEN_ID, String.class), null, TokenStatus.TOKEN_EXPIRED);
+        TokenType tokenType = claims.get(AUTHORITIES_KEY) == null ? TokenType.REFRESH : TokenType.ACCESS;
+        return new TokenValidationResult(false, tokenType, claims.get(TOKEN_ID_KEY, String.class), null, TokenStatus.TOKEN_EXPIRED);
     }
 
     public TokenValidationResult isAccessAndRefreshTokenValid(String accessToken, String refreshToken) {
         TokenValidationResult refTokenRes = validateToken(refreshToken);
-        TokenValidationResult aTokenRes = validateToken(accessToken);
+        TokenValidationResult accessTokenRes = validateToken(accessToken);
 
         if (!isRefreshTokenValid(refTokenRes)) {
             return refTokenRes;
         }
 
-        if (!isAccessTokenValid(aTokenRes)) {
-            return aTokenRes;
+        if (!isAccessTokenValid(accessTokenRes)) {
+            return accessTokenRes;
         }
 
-        if (!isTokenPairValid(refTokenRes, aTokenRes)) {
+        if (!isTokenPairValid(refTokenRes, accessTokenRes)) {
             return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_ID_NOT_MATCH);
         }
 
@@ -157,11 +155,11 @@ public class TokenProvider {
         return true;
     }
 
-    private boolean isAccessTokenValid(TokenValidationResult aTokenRes) {
+    private boolean isAccessTokenValid(TokenValidationResult accessTokenRes) {
         // 잘못된 access 토큰일 경우에만 => 재발급 할꺼라 만료된 것도 OK
-        if (!aTokenRes.getResult() && aTokenRes.getTokenStatus() != TokenStatus.TOKEN_EXPIRED) {
+        if (!accessTokenRes.getResult() && accessTokenRes.getTokenStatus() != TokenStatus.TOKEN_EXPIRED) {
             log.info("Wrong Access Token");
-            aTokenRes.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
+            accessTokenRes.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
             return false;
         }
 
@@ -180,7 +178,7 @@ public class TokenProvider {
 
     public boolean isAccessTokenBlackList(String accessToken) {
         if (blackListRepository.isKeyBlackList(accessToken)) {
-            log.info("폐기된 jwt 토큰");
+            log.info("Blacklisted Access Token");
             return true;
         } else {
             return false;
