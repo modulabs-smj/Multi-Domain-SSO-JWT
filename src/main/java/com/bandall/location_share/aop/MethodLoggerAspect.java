@@ -27,7 +27,7 @@ public class MethodLoggerAspect {
 
     @Pointcut(
             "within(com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository) || " +
-                    "within(com.bandall.location_share.domain.member.MemberJpaRepository) || " +
+                    "within(com.bandall.location_share.domain.member.MemberRepository) || " +
                     "within(com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository)"
     )
     public void repository() {

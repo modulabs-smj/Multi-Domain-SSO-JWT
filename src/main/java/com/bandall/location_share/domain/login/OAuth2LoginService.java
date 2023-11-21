@@ -10,7 +10,7 @@ import com.bandall.location_share.domain.login.oauth2.OAuth2UserInfoProvider;
 import com.bandall.location_share.domain.login.oauth2.userinfo.OAuth2UserInfo;
 import com.bandall.location_share.domain.login.verification_code.EmailVerificationService;
 import com.bandall.location_share.domain.member.Member;
-import com.bandall.location_share.domain.member.MemberJpaRepository;
+import com.bandall.location_share.domain.member.MemberRepository;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.domain.member.enums.Role;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class OAuth2LoginService {
     private static final String EMAIL_REGEX_PATTERN = "^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$";
-    private final MemberJpaRepository memberRepository;
+    private final MemberRepository memberRepository;
     private final OAuth2UserInfoProvider oAuth2UserInfoProvider;
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;

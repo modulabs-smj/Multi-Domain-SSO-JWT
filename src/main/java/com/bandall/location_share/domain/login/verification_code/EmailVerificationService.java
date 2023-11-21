@@ -2,7 +2,7 @@ package com.bandall.location_share.domain.login.verification_code;
 
 import com.bandall.location_share.domain.login.verification_code.mail.MailService;
 import com.bandall.location_share.domain.member.Member;
-import com.bandall.location_share.domain.member.MemberJpaRepository;
+import com.bandall.location_share.domain.member.MemberRepository;
 import com.bandall.location_share.web.filter.LogFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ public class EmailVerificationService {
 
     private final MailService mailService;
     private final VerificationCodeRepository verificationCodeRepository;
-    private final MemberJpaRepository memberRepository;
+    private final MemberRepository memberRepository;
 
     public void sendVerificationEmail(String email) {
         Member member = memberRepository.findByEmailJoinVerifyCode(email).orElseThrow(() -> {

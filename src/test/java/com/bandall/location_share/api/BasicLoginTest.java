@@ -6,7 +6,7 @@ import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
 import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.member.Member;
-import com.bandall.location_share.domain.member.MemberJpaRepository;
+import com.bandall.location_share.domain.member.MemberRepository;
 import com.bandall.location_share.web.controller.dto.MemberCreateDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.persistence.EntityManager;
@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class BasicLoginTest {
 
     @Autowired
-    private MemberJpaRepository memberRepository;
+    private MemberRepository memberRepository;
 
     @Autowired
     private RedisAccessTokenBlackListRepository blackListRepository;

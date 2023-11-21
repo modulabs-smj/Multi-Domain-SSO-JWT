@@ -11,7 +11,7 @@ import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.login.verification_code.EmailVerificationService;
 import com.bandall.location_share.domain.member.Member;
-import com.bandall.location_share.domain.member.MemberJpaRepository;
+import com.bandall.location_share.domain.member.MemberRepository;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.domain.member.enums.Role;
 import com.bandall.location_share.web.controller.dto.MemberCreateDto;
@@ -36,7 +36,7 @@ public class LoginService {
 
     private static final String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$";
     private static final Pattern PASSWORD_PATTERN = Pattern.compile(PASSWORD_REGEX);
-    private final MemberJpaRepository memberRepository;
+    private final MemberRepository memberRepository;
     private final TokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final RedisAccessTokenBlackListRepository blackListRepository;

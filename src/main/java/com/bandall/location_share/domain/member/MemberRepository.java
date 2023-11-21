@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 @LoggerAOP
-public interface MemberJpaRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByEmail(String email);
 
