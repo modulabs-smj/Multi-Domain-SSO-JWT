@@ -16,22 +16,18 @@ public class RedisAccessTokenBlackListRepository {
     private final RedisTemplate<String, Object> redisBlackListTemplate;
 
     @Value("${jwt.access-token-validity-in-seconds}")
-    private Long accessTokenTimeoutTime;
+    private Long accessTokenTimeoutInSeconds;
 
     public void setBlackList(String key, Object o) {
         redisBlackListTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(o.getClass()));
-        redisBlackListTemplate.opsForValue().set(key, o, accessTokenTimeoutTime * 1000, TimeUnit.MILLISECONDS);
+        redisBlackListTemplate.opsForValue().set(key, o, accessTokenTimeoutInSeconds * 1000, TimeUnit.MILLISECONDS);
     }
 
     public Object getBlackList(String key) {
         return redisBlackListTemplate.opsForValue().get(key);
     }
 
-    public boolean deleteBlackList(String key) {
-        return redisBlackListTemplate.delete(key);
-    }
-
     public boolean isKeyBlackList(String key) {
-        return redisBlackListTemplate.hasKey(key);
+        return Boolean.TRUE.equals(redisBlackListTemplate.hasKey(key));
     }
 }
