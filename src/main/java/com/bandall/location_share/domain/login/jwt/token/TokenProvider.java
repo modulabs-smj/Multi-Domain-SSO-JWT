@@ -98,26 +98,26 @@ public class TokenProvider {
         try {
             Claims claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
             TokenType tokenType = claims.get(AUTHORITIES_KEY) == null ? TokenType.REFRESH : TokenType.ACCESS;
-            return new TokenValidationResult(true, tokenType, claims.get(TOKEN_ID_KEY, String.class), claims, TokenStatus.TOKEN_VALID);
+            return new TokenValidationResult(TokenStatus.TOKEN_VALID, tokenType, claims.get(TOKEN_ID_KEY, String.class), claims);
         } catch (ExpiredJwtException e) {
             log.info("만료된 JWT 토큰");
             return getExpiredTokenValidationResult(e);
         } catch (SecurityException | MalformedJwtException e) {
             log.info("잘못된 JWT 서명");
-            return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE);
+            return new TokenValidationResult(TokenStatus.TOKEN_WRONG_SIGNATURE, null, null, null);
         } catch (UnsupportedJwtException e) {
             log.info("지원되지 않는 JWT 서명");
-            return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_HASH_NOT_SUPPORTED);
+            return new TokenValidationResult(TokenStatus.TOKEN_HASH_NOT_SUPPORTED, null, null, null);
         } catch (IllegalArgumentException e) {
             log.info("잘못된 JWT 토큰");
-            return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_WRONG_SIGNATURE);
+            return new TokenValidationResult(TokenStatus.TOKEN_WRONG_SIGNATURE, null, null, null);
         }
     }
 
     private TokenValidationResult getExpiredTokenValidationResult(ExpiredJwtException e) {
         Claims claims = e.getClaims();
         TokenType tokenType = claims.get(AUTHORITIES_KEY) == null ? TokenType.REFRESH : TokenType.ACCESS;
-        return new TokenValidationResult(false, tokenType, claims.get(TOKEN_ID_KEY, String.class), null, TokenStatus.TOKEN_EXPIRED);
+        return new TokenValidationResult(TokenStatus.TOKEN_EXPIRED, tokenType, claims.get(TOKEN_ID_KEY, String.class), null);
     }
 
     public TokenValidationResult isAccessAndRefreshTokenValid(String accessToken, String refreshToken) {
@@ -133,10 +133,10 @@ public class TokenProvider {
         }
 
         if (!isTokenPairValid(refTokenRes, accessTokenRes)) {
-            return new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_ID_NOT_MATCH);
+            return new TokenValidationResult(TokenStatus.TOKEN_ID_NOT_MATCH, null, null, null);
         }
 
-        return new TokenValidationResult(true, null, refTokenRes.getTokenId(), refTokenRes.getClaims(), TokenStatus.TOKEN_VALID);
+        return new TokenValidationResult(TokenStatus.TOKEN_VALID, null, refTokenRes.getTokenId(), refTokenRes.getClaims());
     }
 
     private boolean isRefreshTokenValid(TokenValidationResult refTokenRes) {
@@ -146,7 +146,7 @@ public class TokenProvider {
             return false;
         }
 
-        if (!refTokenRes.getResult()) {
+        if (!refTokenRes.isValid()) {
             log.info("Wrong Refresh Token");
             refTokenRes.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
             return false;
@@ -157,7 +157,7 @@ public class TokenProvider {
 
     private boolean isAccessTokenValid(TokenValidationResult accessTokenRes) {
         // 잘못된 access 토큰일 경우에만 => 재발급 할꺼라 만료된 것도 OK
-        if (!accessTokenRes.getResult() && accessTokenRes.getTokenStatus() != TokenStatus.TOKEN_EXPIRED) {
+        if (!accessTokenRes.isValid() && accessTokenRes.getTokenStatus() != TokenStatus.TOKEN_EXPIRED) {
             log.info("Wrong Access Token");
             accessTokenRes.setTokenStatus(TokenStatus.TOKEN_WRONG_SIGNATURE);
             return false;

@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 public class JwtFilter extends OncePerRequestFilter {
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_REGEX = "Bearer ([a-zA-Z0-9_\\-\\+\\/=]+)\\.([a-zA-Z0-9_\\-\\+\\/=]+)\\.([a-zA-Z0-9_\\-\\+\\/=]*)";
+    private static final String BEARER_REGEX = "Bearer ([a-zA-Z0-9_\\-\\+\\/=]+)\\.([a-zA-Z0-9_\\-\\+\\/=]+)\\.([a-zA-Z0-9_.\\-\\+\\/=]*)";
     private static final Pattern BEARER_PATTERN = Pattern.compile(BEARER_REGEX);
     private final TokenProvider tokenProvider;
 
@@ -45,7 +45,7 @@ public class JwtFilter extends OncePerRequestFilter {
         TokenValidationResult tokenValidationResult = tokenProvider.validateToken(token);
 
         // 잘못된 토큰일 경우 (잘못된 토큰, Refresh token을 넣은 경우)
-        if (!tokenValidationResult.getResult() || tokenValidationResult.getTokenType() != TokenType.ACCESS) {
+        if (!tokenValidationResult.isValid() || tokenValidationResult.getTokenType() != TokenType.ACCESS) {
             handleWrongToken(request, response, filterChain, tokenValidationResult);
             return;
         }
@@ -69,7 +69,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private void handleBlackListedToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         request.setAttribute("result",
-                new TokenValidationResult(false, null, null, null, TokenStatus.TOKEN_IS_BLACKLIST)
+                new TokenValidationResult(TokenStatus.TOKEN_IS_BLACKLIST, null, null, null)
         );
         filterChain.doFilter(request, response);
     }
@@ -81,7 +81,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private void handleMissingToken(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         request.setAttribute("result",
-                new TokenValidationResult(false, null, null, null, TokenStatus.WRONG_AUTH_HEADER)
+                new TokenValidationResult(TokenStatus.WRONG_AUTH_HEADER, null, null, null)
         );
         filterChain.doFilter(request, response);
     }

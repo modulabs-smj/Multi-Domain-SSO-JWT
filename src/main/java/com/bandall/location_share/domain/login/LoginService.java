@@ -126,13 +126,13 @@ public class LoginService {
     }
 
     public void logout(String email, String accessToken, String refreshToken) {
-        TokenValidationResult validationResult = tokenProvider.validateToken(refreshToken);
+        TokenValidationResult refValidationResult = tokenProvider.validateToken(refreshToken);
 
-        if (!validationResult.getResult()) {
+        if (!refValidationResult.isValid()) {
             throw new IllegalArgumentException("존재하지 않는 Refresh 토큰입니다.");
         }
 
-        String tokenId = validationResult.getTokenId();
+        String tokenId = refValidationResult.getTokenId();
         refreshTokenRepository.deleteRefreshTokenByTokenIdAndOwnerEmail(tokenId, email);
         blackListRepository.setBlackList(accessToken, email);
     }
