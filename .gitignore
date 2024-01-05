@@ -7,12 +7,7 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
-/src/main/resources/application.yml
-/src/main/resources/application-prod.yml
-/src/main/resources/application-aws.yml
-/src/main/resources/application-oauth.yml
-/src/main/resources/application-aws.yml
-/src/test/java/com/bandall/location_share/domain
+/src/main/resources/*.yml
 /src/test/resources
 .gradle
 gradle
