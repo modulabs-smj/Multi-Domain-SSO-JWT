@@ -12,7 +12,6 @@ import com.bandall.location_share.domain.login.verification_code.EmailVerificati
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.MemberRepository;
 import com.bandall.location_share.domain.member.enums.LoginType;
-import com.bandall.location_share.domain.member.enums.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -53,8 +52,8 @@ public class OAuth2LoginService {
                     .password("")
                     .loginType(LoginType.SOCIAL_KAKAO)
                     .username(profile.getName())
-                    .role(Role.ROLE_USER)
                     .build();
+            
             newMember.updateProfileImageUri(profile.getProfileImageUri());
             newMember.updateEmailVerified(profile.getIsEmailVerified());
             memberRepository.save(newMember);

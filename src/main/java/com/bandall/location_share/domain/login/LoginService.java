@@ -13,13 +13,11 @@ import com.bandall.location_share.domain.login.verification_code.EmailVerificati
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.MemberRepository;
 import com.bandall.location_share.domain.member.enums.LoginType;
-import com.bandall.location_share.domain.member.enums.Role;
 import com.bandall.location_share.web.controller.dto.MemberCreateDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +57,7 @@ public class LoginService {
                 .email(memberCreateDto.getEmail())
                 .password(passwordEncoder.encode(memberCreateDto.getPassword()))
                 .username(memberCreateDto.getUsername())
-                .role(Role.ROLE_USER).build();
+                .build();
 
         return memberRepository.save(member);
     }
@@ -213,7 +211,7 @@ public class LoginService {
     private void isSocialLogin(Member member, String message) {
         if (member.getLoginType() != LoginType.EMAIL_PW) {
             log.info("소셜 로그인 유저의 잘못된 요청");
-            throw new UsernameNotFoundException(message);
+            throw new IllegalStateException(message);
         }
     }
 }

@@ -55,7 +55,7 @@ public class TokenProvider {
         // Access 토큰
         String accessToken = Jwts.builder()
                 .setSubject(member.getEmail())
-                .claim(AUTHORITIES_KEY, member.getRole())
+                .claim(AUTHORITIES_KEY, member.getRoles())
                 .claim(USERNAME_KEY, member.getUsername())
                 .claim(TOKEN_ID_KEY, tokenId)
                 .signWith(hashKey, SignatureAlgorithm.HS512)

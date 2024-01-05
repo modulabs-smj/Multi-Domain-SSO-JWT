@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final JwtFilter jwtFilter;
-    private final String[] adminUrl = {"/admin/**"};
+    private final String[] adminUrl = {"/api/admin/**"};
     private final String[] permitAllUrl = {"/error", "/api/account/auth", "/api/account/refresh", "/oauth/login/**"};
     private final String[] anonymousUrl = {"/api/account/create", "/oauth/login/kakao", "/api/account/find-password", "/api/email-verification"};
     @Value("${verification.encoder-strength}")

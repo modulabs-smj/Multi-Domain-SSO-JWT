@@ -2,6 +2,7 @@ package com.bandall.location_share.web.controller.json;
 
 public final class ResponseStatusCode {
     public static final int OK = 200;
+    public static final int FORBIDDEN = 403;
     public static final int URL_NOT_FOUND = 404;
     public static final int EMAIL_NOT_VERIFIED = 410;
     public static final int WRONG_PARAMETER = 420;
