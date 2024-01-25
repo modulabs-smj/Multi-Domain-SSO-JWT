@@ -53,13 +53,12 @@
    - [2.3. Access 토큰 재발급](#3-access-토큰-재발급)
    - [2.4. 로그아웃](#4-로그아웃)
    - [2.5. 유저 이름 변경](#5-유저-이름-변경)
-   - [2.6. 전화번호 변경](#6-전화번호-변경)
-   - [2.7. 비밀번호 변경](#7-비밀번호-변경)
-   - [2.8. 계정 삭제](#8-계정-삭제)
-   - [2.9. 이메일 인증 코드 발급](#9-이메일-인증-코드-발급)
-   - [2.10. 이메일 인증 코드 제출](#10-이메일-인증-코드-제출)
-   - [2.11. 비밀번호 재설정 이메일 코드 발급](#11-비밀번호-재설정-이메일-코드-발급)
-   - [2.12. 비밀번호 재설정](#12-비밀번호-재설정)
+   - [2.6. 비밀번호 변경](#6-비밀번호-변경)
+   - [2.7. 계정 삭제](#7-계정-삭제)
+   - [2.8. 이메일 인증 코드 발급](#8-이메일-인증-코드-발급)
+   - [2.9. 이메일 인증 코드 제출](#9-이메일-인증-코드-제출)
+   - [2.10. 비밀번호 재설정 이메일 코드 발급](#10-비밀번호-재설정-이메일-코드-발급)
+   - [2.11. 비밀번호 재설정](#11-비밀번호-재설정)
 3. [OAuthController](#oauthcontroller)
    - [3.1. 소셜 로그인](#1-소셜-로그인)
    - [3.2. 계정 삭제](#2-계정-삭제)
@@ -71,6 +70,7 @@
 5. [Response Status Code](#response-status-code)
    - [5.1. 응답 JSON 형식](#응답-json-형식)
    - [5.2. 코드 정보](#코드-정보)
+
 # JWT 토큰
 ## 기본 구조
 ### Access Token
@@ -452,18 +452,47 @@ Token ID가 같은 토큰 쌍만 재발급이 가능합니다.
 - **Method:** `GET`
 - **Request Parameters:**
 
-  | Parameter | Description | Required | Default |
-  | --- | --- | --- | --- |
-  | page | Page number | Optional | 0 |
-  | size | Number of members per page | Optional | 10 |
+| Parameter | Description                | Required | Default |
+|-----------|----------------------------|----------|---------|
+| page      | Page number                | Optional | 0       |
+| size      | Number of members per page | Optional | 10      |
 
 - **Success Response:** (HTTP Status 200)
 
 ```json
-  {
-    "httpStatus": "OK",
-    "data": "<PageDto<MemberInfo>>"
+{
+  "httpStatus": "OK",
+  "code": 200,
+  "data": {
+    "elements": [
+      {
+        "id": 1,
+        "loginType": "EMAIL_PW",
+        "email": "[email]",
+        "username": "[username]",
+        "phoneNumber": "[phoneNumber]",
+        "profileImageUri": "[profileImageUri]",
+        "roles": "[roles]",
+        "lastLoginTime": "[lastLoginTime]",
+        "emailVerified": "[emailVerified]"
+      },
+      {
+        "id": 2,
+        "loginType": "EMAIL_PW",
+        "email": "[email]",
+        "username": "[username]",
+        "phoneNumber": "[phoneNumber]",
+        "profileImageUri": "[profileImageUri]",
+        "roles": "[roles]",
+        "lastLoginTime": "[lastLoginTime]",
+        "emailVerified": "[emailVerified]"
+      }
+    ],
+    "curPage": 0,
+    "totalPage": 1,
+    "totalElements": 2
   }
+}
 ```
 
 ## 2. 특정 회원 정보 조회
@@ -472,17 +501,28 @@ Token ID가 같은 토큰 쌍만 재발급이 가능합니다.
 - **Method:** `GET`
 - **Request Parameters:**
 
-  | Parameter | Description | 
-  | --- | --- |
-  | email | Email of the member to retrieve |
+| Parameter | Description                     | 
+|-----------|---------------------------------|
+| email     | Email of the member to retrieve |
 
 - **Success Response:** (HTTP Status 200)
 
 ```json
-  {
+{
     "httpStatus": "OK",
-    "data": "<MemberInfo>"
-  }
+    "code": 200,
+    "data": {
+          "id": 2,
+          "loginType": "EMAIL_PW",
+          "email": "[email]",
+          "username": "[username]",
+          "phoneNumber": "[phoneNumber]",
+          "profileImageUri": "[profileImageUri]",
+          "roles": "[roles]",
+          "lastLoginTime": "[lastLoginTime]",
+          "emailVerified": "[emailVerified]"
+    }
+}
 ```
 
 ## 3. 권한 종류 조회
@@ -492,10 +532,18 @@ Token ID가 같은 토큰 쌍만 재발급이 가능합니다.
 - **Success Response:** (HTTP Status 200)
 
 ```json
-  {
-    "httpStatus": "OK",
-    "data": "<RoleInfo>"
+{
+  "httpStatus": "OK",
+  "code": 200,
+  "data": {
+    "roles": [
+      "ROLE_USER",
+      "ROLE_EMERGENCY_VEHICLE",
+      "ROLE_ANONYMOUS",
+      "ROLE_ADMIN"
+    ]
   }
+}
 ```
 - 서버에 어떤 권한이 있는지 조회합니다.
 
@@ -513,11 +561,11 @@ Token ID가 같은 토큰 쌍만 재발급이 가능합니다.
   }
 ```
 
-| Parameter | Description | 
-| --- | --- |
-| email | Email of the member to Modify Role |
-| role  | role to add or remove |
-| action | `ADD_ROLE` or `REMOVE_ROLE` |
+| Parameter | Description                        | 
+|-----------|------------------------------------|
+| email     | Email of the member to Modify Role |
+| role      | role to add or remove              |
+| action    | `ADD_ROLE` or `REMOVE_ROLE`        |
 
 - **Success Response:** (HTTP Status 200)
 
