@@ -32,6 +32,8 @@ public class TokenProvider {
     private static final String TOKEN_ID_KEY = "tokenId";
     private static final String USERNAME_KEY = "username";
 
+    private static final String TOKEN_ID = "tokenId";
+
     private final Key hashKey;
     private final long accessTokenValidationInMilliseconds;
     private final long refreshTokenValidationInMilliseconds;
@@ -50,7 +52,7 @@ public class TokenProvider {
         long currentTime = (new Date()).getTime();
         Date accessTokenExpireTime = new Date(currentTime + this.accessTokenValidationInMilliseconds);
         Date refreshTokenExpireTime = new Date(currentTime + this.refreshTokenValidationInMilliseconds);
-        String tokenId = UUID.randomUUID().toString();
+        String tokenId = UUID.randomUUID().toString(); // TODO: 고유한 tokenID 발급하는 로직 구성
 
         // Access 토큰
         String accessToken = Jwts.builder()
@@ -88,7 +90,8 @@ public class TokenProvider {
                         .collect(Collectors.toList());
 
         // 커스텀한 UserPrinciple 객체 사용 -> 이후 추가적인 데이터를 토큰에 넣을 경우 UserPrinciple 객체 및 이 클래스의 함수들 수정 필요
-        UserPrinciple principle = new UserPrinciple(claims.getSubject(), claims.get(USERNAME_KEY, String.class), authorities);
+        UserPrinciple principle = new UserPrinciple(claims.getSubject(), claims.get(USERNAME_KEY, String.class),
+                claims.get(TOKEN_ID, String.class), authorities);
 
         return new UsernamePasswordAuthenticationToken(principle, token, authorities);
     }

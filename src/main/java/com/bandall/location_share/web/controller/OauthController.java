@@ -40,7 +40,7 @@ public class OauthController {
                                          @AuthenticationPrincipal UserPrinciple user
     ) {
         log.info("Received request to unlink Kakao OAuth for account: {}", user.getEmail());
-        loginService.deleteSocialUser(socialAccessToken, accessToken.substring(7), LoginType.SOCIAL_KAKAO, user.getEmail());
+        loginService.deleteSocialUser(socialAccessToken, user.getTokenId(), LoginType.SOCIAL_KAKAO, user.getEmail());
 
         log.info("Unlinked Kakao OAuth for account: {}", user.getEmail());
         return new ApiResponseJson(HttpStatus.OK, ControllerMessage.OK_MSG);

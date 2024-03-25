@@ -160,7 +160,7 @@ public class LoginController {
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
-        loginService.deleteMember(user.getEmail(), password, accessToken.substring(7));
+        loginService.deleteMember(user.getEmail(), password);
         log.info("Account deleted: {}", user.getEmail());
         return new ApiResponseJson(HttpStatus.OK, ControllerMessage.OK_MSG);
     }

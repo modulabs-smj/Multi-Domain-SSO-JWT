@@ -21,6 +21,9 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -182,7 +185,7 @@ public class BasicLoginTest {
 
         // then
         TokenInfoDto tokenInfoDtoNew = loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
-        String blackListEmail = (String) blackListRepository.getBlackList(tokenInfoDto.getAccessToken());
+        String blackListEmail = (String) blackListRepository.getBlackList(tokenInfoDto.getTokenId());
         // 블랙리스트 등록
         assertThat(blackListEmail).isEqualTo(email);
         // 새 토큰 발급
@@ -267,12 +270,16 @@ public class BasicLoginTest {
         addMember(email, password, username, true);
 
         // when
-        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
-        loginService.deleteMember(email, password, tokenInfoDto.getAccessToken());
+        List<String> issuedTokens = new ArrayList<>();
+        for(int i = 0; i < 5; i++) {
+            TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+            issuedTokens.add(tokenInfoDto.getTokenId()); // 발급받은 토큰 ID 저장
+        }
+        loginService.deleteMember(email, password);
 
         // then
-        String blackListEmail = (String) blackListRepository.getBlackList(tokenInfoDto.getAccessToken());
-        assertThat(blackListEmail).isEqualTo(email); // 블랙리스트 등록
+        issuedTokens.forEach(tokenId ->
+                assertThat(blackListRepository.getBlackList(tokenId)).isEqualTo(email));
         assertThat(memberRepository.findByEmail(email)).isNotPresent();
         assertThat(refreshTokenRepository.findAllByOwnerEmail(email).size()).isEqualTo(0);
     }

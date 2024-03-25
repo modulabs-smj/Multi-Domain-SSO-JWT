@@ -85,7 +85,7 @@ public class OAuth2LoginService {
         return memberRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("계정이 존재하지 않습니다."));
     }
 
-    public void deleteSocialUser(String socialAccessToken, String accessToken, LoginType loginType, String email) {
+    public void deleteSocialUser(String socialAccessToken, String tokenId, LoginType loginType, String email) {
         OAuth2UserInfo profile = oAuth2UserInfoProvider.getProfile(socialAccessToken, loginType);
 
         String oAuthEmail = profile.getEmail();
@@ -101,7 +101,7 @@ public class OAuth2LoginService {
         memberRepository.deleteById(member.getId());
         memberRepository.flush();
         refreshTokenRepository.deleteAllRefreshTokenByEmail(email);
-        blackListRepository.setBlackList(accessToken, email);
+        blackListRepository.setBlackList(tokenId, email);
     }
 
     private boolean isEmailValid(String email) {

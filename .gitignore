@@ -13,3 +13,5 @@ out/
 gradle
 build
 log
+
+/src/main/generated

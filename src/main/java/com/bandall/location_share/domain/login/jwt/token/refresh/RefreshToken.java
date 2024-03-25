@@ -12,6 +12,7 @@ import java.util.Date;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(indexes = @Index(name = "idx_refresh_token_id", columnList = "tokenId"))
 public class RefreshToken extends BaseTimeEntity {
 
     @Id
@@ -21,7 +22,7 @@ public class RefreshToken extends BaseTimeEntity {
     @Column(length = 50)
     private String ownerEmail;
 
-    @Column(length = 36)
+    @Column(length = 36, unique = true)
     private String tokenId;
 
     private Date expireTime;

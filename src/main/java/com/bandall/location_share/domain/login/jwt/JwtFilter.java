@@ -51,7 +51,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         // 토큰이 블랙리스트인 경우
-        if (tokenProvider.isAccessTokenBlackList(token)) {
+        if (tokenProvider.isAccessTokenBlackList(tokenValidationResult.getTokenId())) {
             handleBlackListedToken(request, response, filterChain);
             return;
         }

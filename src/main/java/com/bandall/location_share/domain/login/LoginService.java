@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -119,7 +120,7 @@ public class LoginService {
 
         refreshTokenRepository.deleteRefreshTokenByTokenIdAndOwnerEmail(tokenId, email);
         refreshTokenRepository.save(newRefreshToken);
-        blackListRepository.setBlackList(accessToken, email);
+        blackListRepository.setBlackList(tokenId, email);
         return tokenInfoDto;
     }
 
@@ -132,7 +133,7 @@ public class LoginService {
 
         String tokenId = refValidationResult.getTokenId();
         refreshTokenRepository.deleteRefreshTokenByTokenIdAndOwnerEmail(tokenId, email);
-        blackListRepository.setBlackList(accessToken, email);
+        blackListRepository.setBlackList(tokenId, email);
     }
 
     public Member updateUsername(String email, String username) {
@@ -150,14 +151,16 @@ public class LoginService {
         member.updatePassword(passwordEncoder.encode(newPassword));
     }
 
-    public void deleteMember(String email, String password, String accessToken) {
+    public void deleteMember(String email, String password) {
         Member member = findMemberByEmail(email);
 
         checkPassword(password, member);
 
+        List<RefreshToken> refreshTokens = refreshTokenRepository.findAllByOwnerEmail(email);
+        refreshTokens.forEach(rf -> blackListRepository.setBlackList(rf.getTokenId(), email));
+
         refreshTokenRepository.deleteAllRefreshTokenByEmail(email);
         memberRepository.deleteById(member.getId());
-        blackListRepository.setBlackList(accessToken, email);
     }
 
     public void changePasswordByEmail(String email, String code, String newPassword) {

@@ -17,12 +17,15 @@ public class PageDto<T> {
 
     int totalPage;
 
-    long totalElements;
-
     public PageDto(Page<T> page) {
         this.elements = page.getContent();
         this.curPage = page.getNumber();
         this.totalPage = page.getTotalPages();
-        this.totalElements = page.getTotalElements();
+    }
+
+    public PageDto(List<T> elements, int curPage, int totalPage) {
+        this.elements = elements;
+        this.curPage = curPage;
+        this.totalPage = totalPage;
     }
 }

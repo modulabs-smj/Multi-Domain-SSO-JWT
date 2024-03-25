@@ -27,6 +27,7 @@ public class HomeController {
 
     @GetMapping("/api/whoami")
     public ApiResponseJson test(@AuthenticationPrincipal UserPrinciple user) {
+        log.info("UserPrinciple {}", user);
         Map<String, String> userInfo = loginService.getUserInfo(user.getEmail());
         return new ApiResponseJson(HttpStatus.OK, userInfo);
     }

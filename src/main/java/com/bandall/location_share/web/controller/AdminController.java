@@ -6,6 +6,7 @@ import com.bandall.location_share.domain.admin.dto.RoleInfo;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import com.bandall.location_share.web.controller.dto.PageDto;
 import com.bandall.location_share.web.controller.dto.RoleModifyDto;
+import com.bandall.location_share.web.controller.dto.SessionInfoDto;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +61,23 @@ public class AdminController {
             log.info("Removing role for user: {}, role: {}", userPrinciple.getEmail(), roleModifyDto.getEmail());
             adminService.removeRole(userPrinciple.getEmail(), roleModifyDto.getEmail(), roleModifyDto.getRole());
         }
+
+        return new ApiResponseJson(HttpStatus.OK, "OK");
+    }
+
+    @GetMapping("/api/admin/session")
+    public ApiResponseJson getSessionInfo(@RequestParam(required = false, defaultValue = "1") int page,
+                                          @RequestParam(required = false, defaultValue = "10") int size,
+                                          @AuthenticationPrincipal UserPrinciple userPrinciple) {
+        PageDto<SessionInfoDto> sessionInfos = adminService.getSessionInfos(userPrinciple.getEmail(), page, size);
+
+        return new ApiResponseJson(HttpStatus.OK, sessionInfos);
+    }
+
+    @GetMapping("/api/admin/session/ban")
+    public ApiResponseJson setTokenBlacklist(@RequestParam String tokenId,
+                                             @AuthenticationPrincipal UserPrinciple userPrinciple) {
+        adminService.setTokenBlacklist(userPrinciple.getEmail(), tokenId);
 
         return new ApiResponseJson(HttpStatus.OK, "OK");
     }
