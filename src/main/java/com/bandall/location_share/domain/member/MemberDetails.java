@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
+// TODO: UserPrinciple -> MemberDetails로 마이그레이션 하기
 @Getter
 public class MemberDetails implements UserDetails {
 

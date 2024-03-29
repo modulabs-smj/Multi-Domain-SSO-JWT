@@ -70,7 +70,6 @@ public class AdminService {
         log.info("Updated member roles={}", member.getRoles());
     }
 
-    // TODO: 페이징 처리
     public PageDto<MemberInfo> getMemberInfos(String adminEmail, int page, int size) {
         checkAdminRole(adminEmail);
 

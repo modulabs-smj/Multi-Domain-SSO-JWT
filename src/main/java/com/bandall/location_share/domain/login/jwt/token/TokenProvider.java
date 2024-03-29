@@ -4,6 +4,7 @@ import com.bandall.location_share.aop.LoggerAOP;
 import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
 import com.bandall.location_share.domain.login.jwt.dto.TokenValidationResult;
 import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
+import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import io.jsonwebtoken.*;
@@ -38,13 +39,17 @@ public class TokenProvider {
     private final long accessTokenValidationInMilliseconds;
     private final long refreshTokenValidationInMilliseconds;
 
+
+    private final RefreshTokenRepository refreshTokenRepository;
     private final RedisAccessTokenBlackListRepository blackListRepository;
 
-    public TokenProvider(String secrete, long accessTokenValidationInSeconds, long refreshTokenValidationSeconds, RedisAccessTokenBlackListRepository blackListRepository) {
+    public TokenProvider(String secrete, long accessTokenValidationInSeconds, long refreshTokenValidationSeconds,
+                         RefreshTokenRepository refreshTokenRepository, RedisAccessTokenBlackListRepository blackListRepository) {
         byte[] keyBytes = Decoders.BASE64.decode(secrete);
         this.hashKey = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenValidationInMilliseconds = accessTokenValidationInSeconds * 1000;
         this.refreshTokenValidationInMilliseconds = refreshTokenValidationSeconds * 1000;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.blackListRepository = blackListRepository;
     }
 
@@ -52,7 +57,11 @@ public class TokenProvider {
         long currentTime = (new Date()).getTime();
         Date accessTokenExpireTime = new Date(currentTime + this.accessTokenValidationInMilliseconds);
         Date refreshTokenExpireTime = new Date(currentTime + this.refreshTokenValidationInMilliseconds);
-        String tokenId = UUID.randomUUID().toString(); // TODO: 고유한 tokenID 발급하는 로직 구성
+
+        String tokenId;
+        do {
+            tokenId = UUID.randomUUID().toString();
+        } while (refreshTokenRepository.existsByTokenId(tokenId));
 
         // Access 토큰
         String accessToken = Jwts.builder()

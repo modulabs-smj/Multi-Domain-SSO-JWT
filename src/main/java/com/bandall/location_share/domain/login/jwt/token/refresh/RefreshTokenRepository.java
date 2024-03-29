@@ -16,6 +16,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     boolean existsByTokenIdAndOwnerEmail(String tokenId, String ownerEmail);
 
+    boolean existsByTokenId(String tokenId);
+
     List<RefreshToken> findAllByOwnerEmail(String email);
 
     @Modifying(clearAutomatically = true)

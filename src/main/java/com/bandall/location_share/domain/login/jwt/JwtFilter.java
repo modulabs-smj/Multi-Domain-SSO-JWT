@@ -21,6 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+// TODO: AuthenticationProvider 패턴을 사용하도록 리펙토링
 @Slf4j
 @Component
 @RequiredArgsConstructor
