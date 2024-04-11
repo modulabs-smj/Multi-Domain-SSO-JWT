@@ -1,9 +1,11 @@
 package com.bandall.location_share.domain.login.jwt.token;
 
 import com.bandall.location_share.aop.LoggerAOP;
-import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.jwt.dto.AccessRefreshTokenDto;
+import com.bandall.location_share.domain.login.jwt.dto.IdTokenDto;
 import com.bandall.location_share.domain.login.jwt.dto.TokenValidationResult;
 import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
+import com.bandall.location_share.domain.login.jwt.token.id.IdTokenRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.member.Member;
 import com.bandall.location_share.domain.member.UserPrinciple;
@@ -32,28 +34,63 @@ public class TokenProvider {
     private static final String AUTHORITIES_KEY = "auth";
     private static final String TOKEN_ID_KEY = "tokenId";
     private static final String USERNAME_KEY = "username";
-
     private static final String TOKEN_ID = "tokenId";
+    private static final String TOKEN_TYPE_KEY = "tokenType";
 
     private final Key hashKey;
     private final long accessTokenValidationInMilliseconds;
     private final long refreshTokenValidationInMilliseconds;
+    private final long idTokenValidationInMilliseconds;
 
 
+    private final IdTokenRepository idTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RedisAccessTokenBlackListRepository blackListRepository;
 
-    public TokenProvider(String secrete, long accessTokenValidationInSeconds, long refreshTokenValidationSeconds,
-                         RefreshTokenRepository refreshTokenRepository, RedisAccessTokenBlackListRepository blackListRepository) {
+    public TokenProvider(String secrete,
+                         long accessTokenValidationInSeconds,
+                         long refreshTokenValidationSeconds,
+                         long idTokenValidationSeconds,
+                         IdTokenRepository idTokenRepository,
+                         RefreshTokenRepository refreshTokenRepository,
+                         RedisAccessTokenBlackListRepository blackListRepository) {
         byte[] keyBytes = Decoders.BASE64.decode(secrete);
         this.hashKey = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenValidationInMilliseconds = accessTokenValidationInSeconds * 1000;
         this.refreshTokenValidationInMilliseconds = refreshTokenValidationSeconds * 1000;
+        this.idTokenValidationInMilliseconds = idTokenValidationSeconds * 1000;
+        this.idTokenRepository = idTokenRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.blackListRepository = blackListRepository;
     }
 
-    public TokenInfoDto createToken(Member member) {
+    public IdTokenDto createIdToken(Member member) {
+        long currentTime = (new Date()).getTime();
+        Date idTokenExpireTime = new Date(currentTime + this.idTokenValidationInMilliseconds);
+
+        String tokenId;
+        do {
+            tokenId = UUID.randomUUID().toString();
+        } while (idTokenRepository.existsByTokenId(tokenId));
+
+        String idToken = Jwts.builder()
+                .setSubject(member.getEmail())
+                .claim(TOKEN_TYPE_KEY, TokenType.ID)
+                .claim(USERNAME_KEY, member.getUsername())
+                .claim(TOKEN_ID_KEY, tokenId)
+                .signWith(hashKey, SignatureAlgorithm.HS512)
+                .setExpiration(idTokenExpireTime)
+                .compact();
+
+        return IdTokenDto.builder()
+                .ownerEmail(member.getEmail())
+                .tokenId(tokenId)
+                .idToken(idToken)
+                .idTokenExpireTime(idTokenExpireTime)
+                .build();
+    }
+
+    public AccessRefreshTokenDto createAccessRefreshTokenPair(Member member) {
         long currentTime = (new Date()).getTime();
         Date accessTokenExpireTime = new Date(currentTime + this.accessTokenValidationInMilliseconds);
         Date refreshTokenExpireTime = new Date(currentTime + this.refreshTokenValidationInMilliseconds);
@@ -66,6 +103,7 @@ public class TokenProvider {
         // Access 토큰
         String accessToken = Jwts.builder()
                 .setSubject(member.getEmail())
+                .claim(TOKEN_TYPE_KEY, TokenType.ACCESS)
                 .claim(AUTHORITIES_KEY, member.getRoles())
                 .claim(USERNAME_KEY, member.getUsername())
                 .claim(TOKEN_ID_KEY, tokenId)
@@ -77,11 +115,12 @@ public class TokenProvider {
         String refreshToken = Jwts.builder()
                 .setExpiration(refreshTokenExpireTime)
                 .setSubject(member.getEmail())
+                .claim(TOKEN_TYPE_KEY, TokenType.REFRESH)
                 .claim(TOKEN_ID_KEY, tokenId)
                 .signWith(hashKey, SignatureAlgorithm.HS512)
                 .compact();
 
-        return TokenInfoDto.builder()
+        return AccessRefreshTokenDto.builder()
                 .ownerEmail(member.getEmail())
                 .tokenId(tokenId)
                 .accessToken(accessToken)
@@ -109,26 +148,26 @@ public class TokenProvider {
     public TokenValidationResult validateToken(String token) {
         try {
             Claims claims = Jwts.parserBuilder().setSigningKey(hashKey).build().parseClaimsJws(token).getBody();
-            TokenType tokenType = claims.get(AUTHORITIES_KEY) == null ? TokenType.REFRESH : TokenType.ACCESS;
+            TokenType tokenType = TokenType.fromString(claims.get(TOKEN_TYPE_KEY, String.class));
             return new TokenValidationResult(TokenStatus.TOKEN_VALID, tokenType, claims.get(TOKEN_ID_KEY, String.class), claims);
         } catch (ExpiredJwtException e) {
             log.info("만료된 JWT 토큰");
             return getExpiredTokenValidationResult(e);
         } catch (SecurityException | MalformedJwtException e) {
             log.info("잘못된 JWT 서명");
-            return new TokenValidationResult(TokenStatus.TOKEN_WRONG_SIGNATURE, null, null, null);
+            return new TokenValidationResult(TokenStatus.TOKEN_WRONG_SIGNATURE);
         } catch (UnsupportedJwtException e) {
             log.info("지원되지 않는 JWT 서명");
-            return new TokenValidationResult(TokenStatus.TOKEN_HASH_NOT_SUPPORTED, null, null, null);
+            return new TokenValidationResult(TokenStatus.TOKEN_HASH_NOT_SUPPORTED);
         } catch (IllegalArgumentException e) {
             log.info("잘못된 JWT 토큰");
-            return new TokenValidationResult(TokenStatus.TOKEN_WRONG_SIGNATURE, null, null, null);
+            return new TokenValidationResult(TokenStatus.TOKEN_WRONG_SIGNATURE);
         }
     }
 
     private TokenValidationResult getExpiredTokenValidationResult(ExpiredJwtException e) {
         Claims claims = e.getClaims();
-        TokenType tokenType = claims.get(AUTHORITIES_KEY) == null ? TokenType.REFRESH : TokenType.ACCESS;
+        TokenType tokenType = TokenType.fromString(claims.get(TOKEN_TYPE_KEY, String.class));
         return new TokenValidationResult(TokenStatus.TOKEN_EXPIRED, tokenType, claims.get(TOKEN_ID_KEY, String.class), null);
     }
 
@@ -145,7 +184,7 @@ public class TokenProvider {
         }
 
         if (!isTokenPairValid(refTokenRes, accessTokenRes)) {
-            return new TokenValidationResult(TokenStatus.TOKEN_ID_NOT_MATCH, null, null, null);
+            return new TokenValidationResult(TokenStatus.TOKEN_ID_NOT_MATCH);
         }
 
         return new TokenValidationResult(TokenStatus.TOKEN_VALID, null, refTokenRes.getTokenId(), refTokenRes.getClaims());

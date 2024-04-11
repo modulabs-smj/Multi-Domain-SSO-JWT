@@ -44,6 +44,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         TokenValidationResult tokenValidationResult = tokenProvider.validateToken(token);
+        log.info("TokenValidationResult : {}", tokenValidationResult);
 
         // 잘못된 토큰일 경우 (잘못된 토큰, Refresh token을 넣은 경우)
         if (!tokenValidationResult.isValid() || tokenValidationResult.getTokenType() != TokenType.ACCESS) {

@@ -1,7 +1,7 @@
 package com.bandall.location_share.web.controller;
 
 import com.bandall.location_share.domain.login.OAuth2LoginService;
-import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.jwt.dto.AccessRefreshTokenDto;
 import com.bandall.location_share.domain.member.UserPrinciple;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.web.controller.advice.ControllerMessage;
@@ -30,9 +30,9 @@ public class OauthController {
             throw new IllegalArgumentException(ControllerMessage.WRONG_REQUEST_ERROR_MSG);
         }
 
-        TokenInfoDto tokenInfoDto = loginService.socialLogin(socialAccessToken, LoginType.SOCIAL_KAKAO);
-        log.info("Kakao OAuth login successful with token info: {}", tokenInfoDto);
-        return new ApiResponseJson(HttpStatus.OK, tokenInfoDto);
+        AccessRefreshTokenDto accessRefreshTokenDto = loginService.socialLogin(socialAccessToken, LoginType.SOCIAL_KAKAO);
+        log.info("Kakao OAuth login successful with token info: {}", accessRefreshTokenDto);
+        return new ApiResponseJson(HttpStatus.OK, accessRefreshTokenDto);
     }
 
     @PostMapping("/oauth/unlink/kakao")

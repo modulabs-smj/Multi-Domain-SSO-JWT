@@ -5,6 +5,7 @@ import com.bandall.location_share.domain.login.jwt.JwtAuthenticationEntryPoint;
 import com.bandall.location_share.domain.login.jwt.JwtProperties;
 import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
 import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
+import com.bandall.location_share.domain.login.jwt.token.id.IdTokenRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -20,11 +21,15 @@ public class JwtConfig {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
+    private final IdTokenRepository idTokenRepository;
+
     @Bean
     public TokenProvider tokenProvider(JwtProperties jwtProperties) {
         return new TokenProvider(jwtProperties.getSecret(),
                 jwtProperties.getAccessTokenValidityInSeconds(),
                 jwtProperties.getRefreshTokenValidityInSeconds(),
+                jwtProperties.getIdTokenValidityInSeconds(),
+                idTokenRepository,
                 refreshTokenRepository,
                 blackListRepository);
     }

@@ -18,6 +18,13 @@ public class TokenValidationResult {
     private String tokenId;
     private Claims claims;
 
+    public TokenValidationResult(TokenStatus tokenStatus) {
+        this.tokenStatus = tokenStatus;
+        this.tokenType = null;
+        this.tokenId = null;
+        this.claims = null;
+    }
+
     public String getEmail() {
         if (claims == null) {
             throw new IllegalStateException("Claim value is null.");

@@ -1,6 +1,6 @@
 package com.bandall.location_share.api;
 
-import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.jwt.dto.AccessRefreshTokenDto;
 import com.bandall.location_share.domain.member.enums.LoginType;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import com.bandall.location_share.web.controller.json.ResponseStatusCode;
@@ -65,10 +65,10 @@ public class SpringSecurityJwtTest {
     @DisplayName("컨트롤러 접근 테스트[성공]")
     void accessTokenTest() throws JsonProcessingException {
         // given
-        TokenInfoDto tokenInfoDto = getTokenInfoDto(email, password);
+        AccessRefreshTokenDto accessRefreshTokenDto = getTokenInfoDto(email, password);
 
         // when
-        HttpEntity<String> httpEntity = setHttpEntity(tokenInfoDto);
+        HttpEntity<String> httpEntity = setHttpEntity(accessRefreshTokenDto);
         String url = makeUrl("/api/whoami");
         ResponseEntity<ApiResponseJson> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, ApiResponseJson.class);
 
@@ -82,11 +82,11 @@ public class SpringSecurityJwtTest {
     @DisplayName("컨트롤러 접근 테스트[실패]")
     void accessTokenTestFail() throws JsonProcessingException {
         // given
-        TokenInfoDto tokenInfoDto = getTokenInfoDto(email, password);
-        tokenInfoDto.setAccessToken("fake token value");
+        AccessRefreshTokenDto accessRefreshTokenDto = getTokenInfoDto(email, password);
+        accessRefreshTokenDto.setAccessToken("fake token value");
 
         // when
-        HttpEntity<String> httpEntity = setHttpEntity(tokenInfoDto);
+        HttpEntity<String> httpEntity = setHttpEntity(accessRefreshTokenDto);
         String url = makeUrl("/api/whoami");
         ResponseEntity<ApiResponseJson> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, ApiResponseJson.class);
 
@@ -100,8 +100,8 @@ public class SpringSecurityJwtTest {
     @DisplayName("Auth 헤더 X")
     void accessTokenTestFail2() throws JsonProcessingException {
         // given
-        TokenInfoDto tokenInfoDto = getTokenInfoDto(email, password);
-        tokenInfoDto.setAccessToken("fake token value");
+        AccessRefreshTokenDto accessRefreshTokenDto = getTokenInfoDto(email, password);
+        accessRefreshTokenDto.setAccessToken("fake token value");
 
         // when
         HttpEntity<String> httpEntity = new HttpEntity<>("");
@@ -118,8 +118,8 @@ public class SpringSecurityJwtTest {
     @DisplayName("잘못된 Auth 헤더")
     void accessTokenTestFail3() throws JsonProcessingException {
         // given
-        TokenInfoDto tokenInfoDto = getTokenInfoDto(email, password);
-        tokenInfoDto.setAccessToken(" " + tokenInfoDto.getAccessToken());
+        AccessRefreshTokenDto accessRefreshTokenDto = getTokenInfoDto(email, password);
+        accessRefreshTokenDto.setAccessToken(" " + accessRefreshTokenDto.getAccessToken());
 
         // when
         HttpEntity<String> httpEntity = new HttpEntity<>("");
@@ -136,7 +136,7 @@ public class SpringSecurityJwtTest {
     @DisplayName("Access Token 시간 초과")
     void accessTokenTimeout() throws JsonProcessingException {
         // given
-        TokenInfoDto tokenInfoDto = getTokenInfoDto(email, password);
+        AccessRefreshTokenDto accessRefreshTokenDto = getTokenInfoDto(email, password);
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -144,7 +144,7 @@ public class SpringSecurityJwtTest {
         }
 
         // when
-        HttpEntity<String> httpEntity = setHttpEntity(tokenInfoDto);
+        HttpEntity<String> httpEntity = setHttpEntity(accessRefreshTokenDto);
         String url = makeUrl("/api/whoami");
         ResponseEntity<ApiResponseJson> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, ApiResponseJson.class);
         log.info("{}", response);
@@ -158,16 +158,16 @@ public class SpringSecurityJwtTest {
     @DisplayName("로그아웃")
     void logout() throws JsonProcessingException {
         // given
-        TokenInfoDto tokenInfoDto = getTokenInfoDto(email, password);
+        AccessRefreshTokenDto accessRefreshTokenDto = getTokenInfoDto(email, password);
 
         // when
-        HttpEntity<String> httpEntity = setHttpEntity(tokenInfoDto, Map.of("refreshToken", tokenInfoDto.getRefreshToken()));
+        HttpEntity<String> httpEntity = setHttpEntity(accessRefreshTokenDto, Map.of("refreshToken", accessRefreshTokenDto.getRefreshToken()));
         log.info("{}", httpEntity);
         String logoutUrl = makeUrl("/api/account/logout");
         restTemplate.exchange(logoutUrl, HttpMethod.POST, httpEntity, ApiResponseJson.class);
 
         String accessUrl = makeUrl("/api/whoami");
-        HttpEntity<String> httpEntity2 = setHttpEntity(tokenInfoDto);
+        HttpEntity<String> httpEntity2 = setHttpEntity(accessRefreshTokenDto);
         ResponseEntity<ApiResponseJson> response = restTemplate.exchange(accessUrl, HttpMethod.GET, httpEntity2, ApiResponseJson.class);
         log.info("{}", response);
 
@@ -181,17 +181,17 @@ public class SpringSecurityJwtTest {
     void accessTokenAfterRefresh() throws JsonProcessingException {
         // given
         addMember(email, password, username);
-        TokenInfoDto tokenInfoDto = getTokenInfoDto(email, password);
+        AccessRefreshTokenDto accessRefreshTokenDto = getTokenInfoDto(email, password);
 
         // when
         String refreshUrl = makeUrl("/api/account/refresh");
         ResponseEntity<ApiResponseJson> response1 = restTemplate.postForEntity(refreshUrl, Map.of(
-                "refreshToken", tokenInfoDto.getRefreshToken(),
-                "accessToken", tokenInfoDto.getAccessToken()), ApiResponseJson.class);
+                "refreshToken", accessRefreshTokenDto.getRefreshToken(),
+                "accessToken", accessRefreshTokenDto.getAccessToken()), ApiResponseJson.class);
         log.info("{}", response1);
 
         String accessUrl = makeUrl("/api/whoami");
-        HttpEntity<String> httpEntity = setHttpEntity(tokenInfoDto);
+        HttpEntity<String> httpEntity = setHttpEntity(accessRefreshTokenDto);
         ResponseEntity<ApiResponseJson> response = restTemplate.exchange(accessUrl, HttpMethod.GET, httpEntity, ApiResponseJson.class);
         log.info("{}", response);
 
@@ -204,19 +204,19 @@ public class SpringSecurityJwtTest {
         return "http://localhost:" + port + url;
     }
 
-    private HttpEntity setHttpEntity(TokenInfoDto tokenInfoDto, Map<String, Object> json) {
+    private HttpEntity setHttpEntity(AccessRefreshTokenDto accessRefreshTokenDto, Map<String, Object> json) {
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set("Authorization", "Bearer " + tokenInfoDto.getAccessToken());
+        httpHeaders.set("Authorization", "Bearer " + accessRefreshTokenDto.getAccessToken());
         return new HttpEntity<>(json, httpHeaders);
     }
 
-    private HttpEntity<String> setHttpEntity(TokenInfoDto tokenInfoDto) {
+    private HttpEntity<String> setHttpEntity(AccessRefreshTokenDto accessRefreshTokenDto) {
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set("Authorization", "Bearer " + tokenInfoDto.getAccessToken());
+        httpHeaders.set("Authorization", "Bearer " + accessRefreshTokenDto.getAccessToken());
         return new HttpEntity<>(httpHeaders);
     }
 
-    private TokenInfoDto getTokenInfoDto(String email, String password) throws JsonProcessingException {
+    private AccessRefreshTokenDto getTokenInfoDto(String email, String password) throws JsonProcessingException {
         Map<String, String> json = new HashMap<>();
         json.put("email", email);
         json.put("password", password);
@@ -224,14 +224,14 @@ public class SpringSecurityJwtTest {
 
         String url = "http://localhost:" + port + "/api/account/auth";
         ResponseEntity<String> response = restTemplate.postForEntity(url, json, String.class);
-        TokenInfoDto tokenInfoDto = parseTokenInfoDto(response);
-        return tokenInfoDto;
+        AccessRefreshTokenDto accessRefreshTokenDto = parseTokenInfoDto(response);
+        return accessRefreshTokenDto;
     }
 
-    private TokenInfoDto parseTokenInfoDto(ResponseEntity<String> response) throws JsonProcessingException {
+    private AccessRefreshTokenDto parseTokenInfoDto(ResponseEntity<String> response) throws JsonProcessingException {
         Map<String, Object> responseJson = mapper.readValue(response.getBody(), Map.class);
         Map<String, String> tokenInfoMap = (Map<String, String>) responseJson.get("data");
-        TokenInfoDto tokenInfoDto = TokenInfoDto.builder()
+        AccessRefreshTokenDto accessRefreshTokenDto = AccessRefreshTokenDto.builder()
                 .accessToken(tokenInfoMap.get("accessToken"))
                 .accessTokenExpireTime(Date.from(Instant.parse(tokenInfoMap.get("accessTokenExpireTime"))))
                 .refreshToken(tokenInfoMap.get("refreshToken"))
@@ -239,7 +239,7 @@ public class SpringSecurityJwtTest {
                 .ownerEmail(tokenInfoMap.get("ownerEmail"))
                 .tokenId(tokenInfoMap.get("tokenId"))
                 .build();
-        return tokenInfoDto;
+        return accessRefreshTokenDto;
     }
 
     public void addMember(String email, String password, String username) {

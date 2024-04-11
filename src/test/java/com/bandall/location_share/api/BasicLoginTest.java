@@ -2,7 +2,7 @@ package com.bandall.location_share.api;
 
 import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
 import com.bandall.location_share.domain.login.LoginService;
-import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.jwt.dto.AccessRefreshTokenDto;
 import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.member.Member;
@@ -86,7 +86,7 @@ public class BasicLoginTest {
         // when
 
         // then
-        assertThatThrownBy(() -> loginService.loginMember(email, password)).isInstanceOf(EmailNotVerifiedException.class);
+        assertThatThrownBy(() -> loginService.issueAccessRefreshToken(email, password)).isInstanceOf(EmailNotVerifiedException.class);
     }
 
     @Test
@@ -99,11 +99,11 @@ public class BasicLoginTest {
         addMember(email, password, username, true);
 
         // when
-        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
-        log.info("{}", tokenInfoDto);
+        AccessRefreshTokenDto accessRefreshTokenDto = loginService.issueAccessRefreshToken(email, password);
+        log.info("{}", accessRefreshTokenDto);
 
         // then
-        assertThat(tokenInfoDto.getOwnerEmail()).isEqualTo(email);
+        assertThat(accessRefreshTokenDto.getOwnerEmail()).isEqualTo(email);
     }
 
     @Test
@@ -116,8 +116,8 @@ public class BasicLoginTest {
         addMember(email, password, username, true);
 
         // then
-        assertThatThrownBy(() -> loginService.loginMember(email + "1234", password)).isInstanceOf(BadCredentialsException.class);
-        assertThatThrownBy(() -> loginService.loginMember(email, password + "1234")).isInstanceOf(BadCredentialsException.class);
+        assertThatThrownBy(() -> loginService.issueAccessRefreshToken(email + "1234", password)).isInstanceOf(BadCredentialsException.class);
+        assertThatThrownBy(() -> loginService.issueAccessRefreshToken(email, password + "1234")).isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
@@ -152,7 +152,7 @@ public class BasicLoginTest {
         loginService.updatePassword(email, newPassword, password);
 
         // then
-        loginService.loginMember(email, newPassword);
+        loginService.issueAccessRefreshToken(email, newPassword);
     }
 
     @Test
@@ -181,15 +181,15 @@ public class BasicLoginTest {
         addMember(email, password, username, true);
 
         // when
-        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+        AccessRefreshTokenDto accessRefreshTokenDto = loginService.issueAccessRefreshToken(email, password);
 
         // then
-        TokenInfoDto tokenInfoDtoNew = loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
-        String blackListEmail = (String) blackListRepository.getBlackList(tokenInfoDto.getTokenId());
+        AccessRefreshTokenDto accessRefreshTokenDtoNew = loginService.refreshToken(accessRefreshTokenDto.getAccessToken(), accessRefreshTokenDto.getRefreshToken());
+        String blackListEmail = (String) blackListRepository.getBlackList(accessRefreshTokenDto.getTokenId());
         // 블랙리스트 등록
         assertThat(blackListEmail).isEqualTo(email);
         // 새 토큰 발급
-        assertThat(tokenInfoDto.getTokenId()).isNotEqualTo(tokenInfoDtoNew.getTokenId());
+        assertThat(accessRefreshTokenDto.getTokenId()).isNotEqualTo(accessRefreshTokenDtoNew.getTokenId());
     }
 
     @Test
@@ -202,21 +202,21 @@ public class BasicLoginTest {
         addMember(email, password, username, true);
 
         // when
-        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
-        TokenInfoDto tokenInfoDto2 = loginService.loginMember(email, password);
+        AccessRefreshTokenDto accessRefreshTokenDto = loginService.issueAccessRefreshToken(email, password);
+        AccessRefreshTokenDto accessRefreshTokenDto2 = loginService.issueAccessRefreshToken(email, password);
 
         // then
-        assertThatThrownBy(() -> loginService.refreshToken("", tokenInfoDto.getRefreshToken()))
+        assertThatThrownBy(() -> loginService.refreshToken("", accessRefreshTokenDto.getRefreshToken()))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), ""))
+        assertThatThrownBy(() -> loginService.refreshToken(accessRefreshTokenDto.getAccessToken(), ""))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> loginService.refreshToken("", ""))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto2.getRefreshToken()))
+        assertThatThrownBy(() -> loginService.refreshToken(accessRefreshTokenDto.getAccessToken(), accessRefreshTokenDto2.getRefreshToken()))
                 .isInstanceOf(IllegalArgumentException.class); // 토큰 교차 검증
         assertThatThrownBy(() -> {
-            loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
-            loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
+            loginService.refreshToken(accessRefreshTokenDto.getAccessToken(), accessRefreshTokenDto.getRefreshToken());
+            loginService.refreshToken(accessRefreshTokenDto.getAccessToken(), accessRefreshTokenDto.getRefreshToken());
         }).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -230,7 +230,7 @@ public class BasicLoginTest {
         addMember(email, password, username, true);
 
         // when
-        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
+        AccessRefreshTokenDto accessRefreshTokenDto = loginService.issueAccessRefreshToken(email, password);
         try {
             Thread.sleep(8000);
         } catch (InterruptedException e) {
@@ -238,7 +238,7 @@ public class BasicLoginTest {
         }
 
         // then
-        assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken()))
+        assertThatThrownBy(() -> loginService.refreshToken(accessRefreshTokenDto.getAccessToken(), accessRefreshTokenDto.getRefreshToken()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -252,11 +252,11 @@ public class BasicLoginTest {
         addMember(email, password, username, true);
 
         // when
-        TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
-        loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken());
+        AccessRefreshTokenDto accessRefreshTokenDto = loginService.issueAccessRefreshToken(email, password);
+        loginService.refreshToken(accessRefreshTokenDto.getAccessToken(), accessRefreshTokenDto.getRefreshToken());
 
         // then
-        assertThatThrownBy(() -> loginService.refreshToken(tokenInfoDto.getAccessToken(), tokenInfoDto.getRefreshToken()))
+        assertThatThrownBy(() -> loginService.refreshToken(accessRefreshTokenDto.getAccessToken(), accessRefreshTokenDto.getRefreshToken()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -272,8 +272,8 @@ public class BasicLoginTest {
         // when
         List<String> issuedTokens = new ArrayList<>();
         for(int i = 0; i < 5; i++) {
-            TokenInfoDto tokenInfoDto = loginService.loginMember(email, password);
-            issuedTokens.add(tokenInfoDto.getTokenId()); // 발급받은 토큰 ID 저장
+            AccessRefreshTokenDto accessRefreshTokenDto = loginService.issueAccessRefreshToken(email, password);
+            issuedTokens.add(accessRefreshTokenDto.getTokenId()); // 발급받은 토큰 ID 저장
         }
         loginService.deleteMember(email, password);
 

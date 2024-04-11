@@ -1,7 +1,7 @@
 package com.bandall.location_share.domain.login;
 
 import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
-import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.login.jwt.dto.AccessRefreshTokenDto;
 import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
 import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
@@ -33,7 +33,7 @@ public class OAuth2LoginService {
     private final RedisAccessTokenBlackListRepository blackListRepository;
     private final EmailVerificationService verificationService;
 
-    public TokenInfoDto socialLogin(String accessToken, LoginType loginType) {
+    public AccessRefreshTokenDto socialLogin(String accessToken, LoginType loginType) {
         OAuth2UserInfo profile = oAuth2UserInfoProvider.getProfile(accessToken, loginType);
 
         String email = profile.getEmail();
@@ -71,14 +71,14 @@ public class OAuth2LoginService {
             throw new EmailNotVerifiedException("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.", email);
         }
 
-        TokenInfoDto tokenInfoDto = tokenProvider.createToken(member);
+        AccessRefreshTokenDto accessRefreshTokenDto = tokenProvider.createAccessRefreshTokenPair(member);
         RefreshToken newRefreshToken = RefreshToken.builder()
-                .ownerEmail(tokenInfoDto.getOwnerEmail())
-                .tokenId(tokenInfoDto.getTokenId())
-                .expireTime(tokenInfoDto.getRefreshTokenExpireTime())
+                .ownerEmail(accessRefreshTokenDto.getOwnerEmail())
+                .tokenId(accessRefreshTokenDto.getTokenId())
+                .expireTime(accessRefreshTokenDto.getRefreshTokenExpireTime())
                 .build();
         refreshTokenRepository.save(newRefreshToken);
-        return tokenInfoDto;
+        return accessRefreshTokenDto;
     }
 
     private Member findMemberByEmail(String email) {

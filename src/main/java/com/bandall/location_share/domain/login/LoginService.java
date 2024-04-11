@@ -1,12 +1,16 @@
 package com.bandall.location_share.domain.login;
 
 import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
-import com.bandall.location_share.domain.login.jwt.dto.TokenInfoDto;
+import com.bandall.location_share.domain.exceptions.IdTokenNotValidException;
+import com.bandall.location_share.domain.login.jwt.dto.AccessRefreshTokenDto;
+import com.bandall.location_share.domain.login.jwt.dto.IdTokenDto;
 import com.bandall.location_share.domain.login.jwt.dto.TokenValidationResult;
 import com.bandall.location_share.domain.login.jwt.token.TokenProvider;
 import com.bandall.location_share.domain.login.jwt.token.TokenStatus;
 import com.bandall.location_share.domain.login.jwt.token.TokenType;
 import com.bandall.location_share.domain.login.jwt.token.access.RedisAccessTokenBlackListRepository;
+import com.bandall.location_share.domain.login.jwt.token.id.IdToken;
+import com.bandall.location_share.domain.login.jwt.token.id.IdTokenRepository;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshToken;
 import com.bandall.location_share.domain.login.jwt.token.refresh.RefreshTokenRepository;
 import com.bandall.location_share.domain.login.verification_code.EmailVerificationService;
@@ -39,6 +43,7 @@ public class LoginService {
     private final TokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final RedisAccessTokenBlackListRepository blackListRepository;
+    private final IdTokenRepository idTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailVerificationService verificationService;
     // 테스트 시 이메일 인증 OFF
@@ -63,7 +68,7 @@ public class LoginService {
         return memberRepository.save(member);
     }
 
-    public TokenInfoDto loginMember(String email, String password) {
+    public IdTokenDto issueIdToken(String email, String password) {
         try {
             Member member = findMemberByEmail(email);
             isSocialLogin(member, "소셜 로그인 계정입니다.");
@@ -74,21 +79,71 @@ public class LoginService {
                 throw new EmailNotVerifiedException("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.", email);
             }
 
-            TokenInfoDto tokenInfoDto = tokenProvider.createToken(member);
-            RefreshToken refreshToken = RefreshToken.builder()
-                    .ownerEmail(tokenInfoDto.getOwnerEmail())
-                    .tokenId(tokenInfoDto.getTokenId())
-                    .expireTime(tokenInfoDto.getRefreshTokenExpireTime())
+            IdTokenDto idTokenDto = tokenProvider.createIdToken(member);
+            IdToken idToken = IdToken.builder()
+                    .ownerEmail(idTokenDto.getOwnerEmail())
+                    .tokenId(idTokenDto.getTokenId())
+                    .expireTime(idTokenDto.getIdTokenExpireTime())
                     .build();
-            refreshTokenRepository.save(refreshToken);
+            idTokenRepository.save(idToken);
 
-            return tokenInfoDto;
+            return idTokenDto;
         } catch (IllegalArgumentException e) {
             throw new BadCredentialsException("계정이 존재하지 않거나 비밀번호가 잘못되었습니다. 소셜 로그인의 경우 소셜 로그인을 이용해주세요.");
         }
     }
 
-    public TokenInfoDto refreshToken(String accessToken, String refreshToken) {
+    public AccessRefreshTokenDto issueAccessRefreshToken(String idToken) {
+        TokenValidationResult validationResult = tokenProvider.validateToken(idToken);
+        if(!validationResult.isValid() || validationResult.getTokenType() != TokenType.ID) {
+            throw new IdTokenNotValidException("IdToken이 유효하지 않습니다.");
+        }
+
+        String memberEmail = validationResult.getEmail();
+        String tokenId = validationResult.getTokenId();
+
+        IdToken idTokenEntity = idTokenRepository.findByTokenId(tokenId).orElseThrow(() ->
+                new IdTokenNotValidException("존재하지 않는 IdToken입니다."));
+        idTokenEntity.updateLastAccessTime();
+
+        Member member = findMemberByEmail(memberEmail);
+        AccessRefreshTokenDto accessRefreshTokenDto = tokenProvider.createAccessRefreshTokenPair(member);
+        RefreshToken refreshToken = RefreshToken.builder()
+                .ownerEmail(accessRefreshTokenDto.getOwnerEmail())
+                .tokenId(accessRefreshTokenDto.getTokenId())
+                .expireTime(accessRefreshTokenDto.getRefreshTokenExpireTime())
+                .build();
+        refreshTokenRepository.save(refreshToken);
+
+        return accessRefreshTokenDto;
+    }
+
+    public AccessRefreshTokenDto issueAccessRefreshToken(String email, String password) {
+        try {
+            Member member = findMemberByEmail(email);
+            isSocialLogin(member, "소셜 로그인 계정입니다.");
+            checkPassword(password, member);
+
+            if (!member.isEmailVerified() && doEmailVerification) {
+                verificationService.sendVerificationEmail(email);
+                throw new EmailNotVerifiedException("이메일 인증이 되어 있지 않습니다. [" + email + "]로 보낸 메일을 통해 인증을 진행해 주세요.", email);
+            }
+
+            AccessRefreshTokenDto accessRefreshTokenDto = tokenProvider.createAccessRefreshTokenPair(member);
+            RefreshToken refreshToken = RefreshToken.builder()
+                    .ownerEmail(accessRefreshTokenDto.getOwnerEmail())
+                    .tokenId(accessRefreshTokenDto.getTokenId())
+                    .expireTime(accessRefreshTokenDto.getRefreshTokenExpireTime())
+                    .build();
+            refreshTokenRepository.save(refreshToken);
+
+            return accessRefreshTokenDto;
+        } catch (IllegalArgumentException e) {
+            throw new BadCredentialsException("계정이 존재하지 않거나 비밀번호가 잘못되었습니다. 소셜 로그인의 경우 소셜 로그인을 이용해주세요.");
+        }
+    }
+
+    public AccessRefreshTokenDto refreshToken(String accessToken, String refreshToken) {
         TokenValidationResult validationResult = tokenProvider.isAccessAndRefreshTokenValid(accessToken, refreshToken);
         // 1. validateToken에 tokenId 값 추가해서 검사
         // 2. tokenId를 통해 blackList 없이 검증 가능 + db에 refresh 토큰 value를 저장하지 않아도 됨(tokenID만 저장)
@@ -111,17 +166,33 @@ public class LoginService {
         Member member = findMemberByEmail(email);
 
         // 정책에 따라서 이전 리프레시 토큰의 만료 시간을 그대로 유지할 수도있음(주기적 로그인)
-        TokenInfoDto tokenInfoDto = tokenProvider.createToken(member);
+        AccessRefreshTokenDto accessRefreshTokenDto = tokenProvider.createAccessRefreshTokenPair(member);
         RefreshToken newRefreshToken = RefreshToken.builder()
-                .ownerEmail(tokenInfoDto.getOwnerEmail())
-                .tokenId(tokenInfoDto.getTokenId())
-                .expireTime(tokenInfoDto.getRefreshTokenExpireTime())
+                .ownerEmail(accessRefreshTokenDto.getOwnerEmail())
+                .tokenId(accessRefreshTokenDto.getTokenId())
+                .expireTime(accessRefreshTokenDto.getRefreshTokenExpireTime())
                 .build();
 
         refreshTokenRepository.deleteRefreshTokenByTokenIdAndOwnerEmail(tokenId, email);
         refreshTokenRepository.save(newRefreshToken);
         blackListRepository.setBlackList(tokenId, email);
-        return tokenInfoDto;
+        return accessRefreshTokenDto;
+    }
+
+    public void logout(String idToken) {
+        TokenValidationResult idTokenValidationResult = tokenProvider.validateToken(idToken);
+
+        if (!idTokenValidationResult.isValid()) {
+            throw new IdTokenNotValidException("존재하지 않는 Id 토큰입니다.");
+        }
+
+        String tokenId = idTokenValidationResult.getTokenId();
+        idTokenRepository.deleteByTokenId(tokenId);
+
+        String email = idTokenValidationResult.getEmail();
+        List<RefreshToken> allRefreshTokens = refreshTokenRepository.findAllByOwnerEmail(email);
+        allRefreshTokens.forEach(rf -> blackListRepository.setBlackList(rf.getTokenId(), email));
+        refreshTokenRepository.deleteAllRefreshTokenByEmail(email);
     }
 
     public void logout(String email, String accessToken, String refreshToken) {

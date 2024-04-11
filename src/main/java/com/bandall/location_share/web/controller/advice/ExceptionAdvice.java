@@ -2,9 +2,13 @@ package com.bandall.location_share.web.controller.advice;
 
 import com.bandall.location_share.domain.exceptions.BadResponseException;
 import com.bandall.location_share.domain.exceptions.EmailNotVerifiedException;
+import com.bandall.location_share.domain.exceptions.IdTokenNotValidException;
 import com.bandall.location_share.domain.exceptions.NoPageException;
 import com.bandall.location_share.web.controller.json.ApiResponseJson;
 import com.bandall.location_share.web.controller.json.ResponseStatusCode;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.TypeMismatchException;
 import org.springframework.dao.DataAccessException;
@@ -76,6 +80,15 @@ public class ExceptionAdvice {
             return createApiResponse(HttpStatus.UNAUTHORIZED, ResponseStatusCode.EMAIL_NOT_VERIFIED, e.getMessage(), ((EmailNotVerifiedException) e).getEmail());
         }
         return createApiResponse(HttpStatus.UNAUTHORIZED, ResponseStatusCode.LOGIN_FAILED, e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(IdTokenNotValidException.class)
+    public ApiResponseJson handleBadIdTokenException(IdTokenNotValidException e, HttpServletResponse response) {
+        Cookie idTokenCookie = new Cookie("idToken", null);
+        idTokenCookie.setMaxAge(0);
+        response.addCookie(idTokenCookie);
+        return createApiResponse(HttpStatus.UNAUTHORIZED, ResponseStatusCode.TOKEN_VALIDATION_TRY_FAILED, e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)

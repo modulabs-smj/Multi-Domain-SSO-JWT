@@ -10,4 +10,5 @@ public class JwtProperties {
     private String secret;
     private Long accessTokenValidityInSeconds;
     private Long refreshTokenValidityInSeconds;
+    private Long idTokenValidityInSeconds;
 }
